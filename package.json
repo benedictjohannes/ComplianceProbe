@@ -1,0 +1,20 @@
+{
+  "name": "compliance-probe",
+  "private": true,
+  "scripts": {
+    "config:schema": "go run . --schema > requirements.schema.json",
+    "report": "node executeReport.mjs",
+    "build:linux": "GOOS=linux GOARCH=amd64 go build -o generate-report-linux .",
+    "build:windows": "GOOS=windows GOARCH=amd64 go build -o generate-report-windows.exe .",
+    "build:mac-intel": "GOOS=darwin GOARCH=amd64 go build -o generate-report-mac-intel .",
+    "build:mac-arm": "GOOS=darwin GOARCH=arm64 go build -o generate-report-mac-arm .",
+    "build": "npm run build:linux && npm run build:windows && npm run build:mac-intel && npm run build:mac-arm"
+  },
+  "devDependencies": {
+    "ts-json-schema-generator": "^2.4.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {}
+}

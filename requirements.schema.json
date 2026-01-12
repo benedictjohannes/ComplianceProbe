@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "Assertion": {
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Unique code for the assertion"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Title of the assertion"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Detailed description of what is being checked"
+        },
+        "cmd": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1,
+          "description": "List of commands to execute for the assertion"
+        },
+        "preCmd": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "Commands to run before the main check"
+        },
+        "postCmd": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "Commands to run after the main check"
+        },
+        "passDescription": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Message shown if all commands in 'cmd' exit with 0."
+        },
+        "failDescription": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Message shown if any command in 'cmd' exits with non-zero."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "code",
+        "title",
+        "description",
+        "cmd",
+        "passDescription",
+        "failDescription"
+      ]
+    },
+    "Section": {
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Title of the section"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1,
+          "description": "List of descriptions for the section"
+        },
+        "assertions": {
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          },
+          "type": "array",
+          "minItems": 1,
+          "description": "List of assertions within this section"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "title",
+        "description",
+        "assertions"
+      ]
+    }
+  },
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Title of the report"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/Section"
+      },
+      "type": "array",
+      "minItems": 1,
+      "description": "List of sections in the report"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "title",
+    "sections"
+  ]
+}
