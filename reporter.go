@@ -1,0 +1,271 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+type AssertionReport struct {
+	Timestamps struct {
+		Start string `json:"start"`
+		End   string `json:"end"`
+	} `json:"timestamps"`
+	Passed   bool                   `json:"passed"`
+	Score    int                    `json:"score"`
+	MinScore int                    `json:"minScore"`
+	Context  map[string]interface{} `json:"context"`
+}
+
+func runReport(config ReportConfig) {
+	now := time.Now()
+	timestamp := now.Format("060102-150405")
+
+	reportsDir := "reports"
+	if _, err := os.Stat(reportsDir); os.IsNotExist(err) {
+		os.MkdirAll(reportsDir, 0755)
+	}
+
+	reportBase := filepath.Join(reportsDir, timestamp+".report")
+	logFile := reportBase + ".log"
+	mdFile := reportBase + ".md"
+	jsonFile := reportBase + ".json"
+
+	finalReport, mdContent, logContent := generateReport(config, runExec)
+
+	os.WriteFile(logFile, []byte(logContent), 0644)
+	os.WriteFile(mdFile, []byte(mdContent), 0644)
+	jsonBytes, _ := json.MarshalIndent(finalReport, "", "  ")
+	os.WriteFile(jsonFile, jsonBytes, 0644)
+
+	fmt.Printf("\n✅ Generation Complete!\n")
+	fmt.Printf("📊 PASS: %d, FAIL: %d\n", finalReport.Stats.Passed, finalReport.Stats.Failed)
+	fmt.Printf("📝 Log: %s\n", logFile)
+	fmt.Printf("📝 Markdown: %s\n", mdFile)
+	fmt.Printf("📊 JSON Report: %s\n", jsonFile)
+}
+
+type ReportStats struct {
+	Passed int `json:"passed"`
+	Failed int `json:"failed"`
+}
+
+type FinalReport struct {
+	Timestamps struct {
+		Start string `json:"start"`
+		End   string `json:"end"`
+	} `json:"timestamps"`
+	Username   string                     `json:"username"`
+	OS         string                     `json:"os"`
+	Arch       string                     `json:"arch"`
+	Assertions map[string]AssertionReport `json:"assertions"`
+	Stats      ReportStats                `json:"stats"`
+}
+
+func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string, string) {
+	now := time.Now()
+	var md strings.Builder
+	var log strings.Builder
+
+	log.WriteString(fmt.Sprintf(">>>>>>>>>>>> REPORT LOG: %s <<<<<<<<<<<<\n\n", now.Format("060102-150405")))
+
+	md.WriteString(fmt.Sprintf("---\ntitle: %s\ndate: %s\ngeometry: margin=2cm\n---\n\n", config.Title, now.Format("2006-01-02")))
+	md.WriteString(fmt.Sprintf("# %s\n\nGenerated on: %s\n\n---\n\n", config.Title, now.Format("2006-01-02 15:04:05")))
+
+	finalReport := FinalReport{
+		Username:   os.Getenv("USER"),
+		Assertions: make(map[string]AssertionReport),
+	}
+	finalReport.Timestamps.Start = now.Format(time.RFC3339)
+
+	totalPassed := 0
+	totalFailed := 0
+
+	for _, section := range config.Sections {
+		fmt.Printf("  Processing Section: %s\n", section.Title)
+		md.WriteString(fmt.Sprintf("## %s\n\n", section.Title))
+		log.WriteString(fmt.Sprintf(">>>>>>>>> SECTION: %s <<<<<<<<<\n\n", section.Title))
+		for _, desc := range section.Description {
+			md.WriteString(fmt.Sprintf("%s  \n", desc))
+		}
+		md.WriteString("\n")
+
+		for _, assertion := range section.Assertions {
+			start := time.Now()
+			context := make(map[string]interface{})
+			score := 0
+
+			log.WriteString(fmt.Sprintf(">>>>>>> ASSERTION: %s <<<<<<<\n\n", assertion.Title))
+
+			// 1. Pre-Commands
+			for _, exec := range assertion.PreCmds {
+				if _, err := execFunc(&exec, context); err != nil {
+					fmt.Printf("      ⚠️ PreCmd Error (%s): %v\n", assertion.Code, err)
+				}
+			}
+
+			// 2. Main Commands
+			var outputs []string
+			for _, cmd := range assertion.Cmds {
+				res, err := execFunc(&cmd.Exec, context)
+				logExecution(&log, cmd.Exec, res, err)
+
+				if err != nil {
+					log.WriteString(fmt.Sprintf(">>>>> Error executing command: %v <<<<<\n\n", err))
+					score += cmd.GetFailScore()
+					continue
+				}
+
+				outputs = append(outputs, res.Stdout)
+
+				// Evaluation
+				result := 0
+				foundRule := false
+				for _, rule := range cmd.ExitCodeRules {
+					match := true
+					if rule.Min != nil && res.ExitCode < *rule.Min {
+						match = false
+					}
+					if rule.Max != nil && res.ExitCode > *rule.Max {
+						match = false
+					}
+					if match {
+						result = rule.Result
+						foundRule = true
+						break
+					}
+				}
+
+				if !foundRule {
+					if res.ExitCode == 0 {
+						result = 1
+					} else {
+						result = -1
+					}
+				}
+
+				if cmd.StdOutRule.Regex != "" || cmd.StdOutRule.Func != "" {
+					verdict, _ := evaluateRule(cmd.StdOutRule, res, context)
+					if verdict != 0 {
+						result = verdict
+					}
+				}
+				if cmd.StdErrRule.Regex != "" || cmd.StdErrRule.Func != "" {
+					verdict, _ := evaluateRule(cmd.StdErrRule, res, context)
+					if verdict != 0 {
+						result = verdict
+					}
+				}
+
+				switch result {
+				case 1:
+					score += cmd.GetPassScore()
+				case -1:
+					score += cmd.GetFailScore()
+				}
+			}
+
+			// 3. Post-Commands
+			for _, exec := range assertion.PostCmds {
+				if _, err := execFunc(&exec, context); err != nil {
+					fmt.Printf("      ⚠️ PostCmd Error (%s): %v\n", assertion.Code, err)
+				}
+			}
+
+			passed := score >= assertion.GetMinPassingScore()
+			if passed {
+				totalPassed++
+			} else {
+				totalFailed++
+			}
+
+			report := AssertionReport{
+				Passed:   passed,
+				Score:    score,
+				MinScore: assertion.GetMinPassingScore(),
+				Context:  make(map[string]interface{}),
+			}
+			report.Timestamps.Start = start.Format(time.RFC3339)
+			report.Timestamps.End = time.Now().Format(time.RFC3339)
+
+			for k, v := range context {
+				report.Context[k] = v
+			}
+			finalReport.Assertions[assertion.Code] = report
+
+			status := "✅ PASS"
+			if !passed {
+				status = "❌ FAIL"
+			}
+			fmt.Printf("    - %s: %s (Score: %d/%d)\n", assertion.Title, status, score, assertion.GetMinPassingScore())
+
+			md.WriteString(fmt.Sprintf("### %s\n\n", assertion.Title))
+			md.WriteString(fmt.Sprintf("%s\n\n", assertion.Description))
+			md.WriteString("**Evidence:**\n\n")
+			md.WriteString("```\n")
+			md.WriteString(strings.Join(outputs, "\n") + "\n")
+			md.WriteString("```\n\n")
+
+			if passed {
+				if assertion.PassDescription != "" {
+					md.WriteString(fmt.Sprintf("> ✅ **Pass:** %s\n\n", assertion.PassDescription))
+				}
+			} else {
+				if assertion.FailDescription != "" {
+					md.WriteString(fmt.Sprintf("> ❌ **Fail:** %s\n\n", assertion.FailDescription))
+				}
+			}
+		}
+		md.WriteString("---\n\n")
+	}
+
+	finalReport.Timestamps.End = time.Now().Format(time.RFC3339)
+	finalReport.Stats.Passed = totalPassed
+	finalReport.Stats.Failed = totalFailed
+
+	return finalReport, md.String(), log.String()
+}
+
+func logExecution(log *strings.Builder, exec Exec, res ExecutionResult, err error) {
+	cmdTitle := "COMMAND"
+	isMultiline := len(strings.Split(exec.Script, "\n")) > 1
+	if isMultiline {
+		cmdTitle = "SCRIPT"
+	} else {
+		cmdTitle += ": " + exec.Script
+	}
+	log.WriteString(fmt.Sprintf(">>>>> %s <<<<<\n", cmdTitle))
+	if isMultiline {
+		log.WriteString("\n")
+		log.WriteString(exec.Script)
+		log.WriteString("\n")
+		log.WriteString("<<<<< END SCRIPT")
+		log.WriteString("\n")
+	} else {
+		log.WriteString("\n")
+	}
+
+	if err != nil {
+		log.WriteString(fmt.Sprintf(">>> ERROR: %v <<<\n", err))
+	}
+
+	if res.Stdout != "" {
+		log.WriteString(">>> STDOUT <<<\n")
+		log.WriteString(res.Stdout)
+		if !strings.HasSuffix(res.Stdout, "\n") {
+			log.WriteString("\n")
+		}
+	}
+
+	if res.Stderr != "" {
+		log.WriteString(">>> STDERR <<<\n")
+		log.WriteString(res.Stderr)
+		if !strings.HasSuffix(res.Stderr, "\n") {
+			log.WriteString("\n")
+		}
+	}
+	log.WriteString("\n")
+}

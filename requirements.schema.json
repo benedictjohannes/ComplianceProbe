@@ -18,37 +18,42 @@
           "minLength": 3,
           "description": "Detailed description of what is being checked"
         },
-        "cmd": {
+        "preCmds": {
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/Exec"
+          },
+          "type": "array",
+          "description": "Executions before main commands"
+        },
+        "cmds": {
+          "items": {
+            "$ref": "#/$defs/Cmd"
           },
           "type": "array",
           "minItems": 1,
-          "description": "List of commands to execute for the assertion"
+          "description": "Main command units to execute"
         },
-        "preCmd": {
+        "postCmds": {
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/Exec"
           },
           "type": "array",
-          "description": "Commands to run before the main check"
+          "description": "Executions after main commands"
         },
-        "postCmd": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array",
-          "description": "Commands to run after the main check"
+        "minPassingScore": {
+          "type": "integer",
+          "description": "Minimum score to consider assertion as passed",
+          "default": 1
         },
         "passDescription": {
           "type": "string",
           "minLength": 3,
-          "description": "Message shown if all commands in 'cmd' exit with 0."
+          "description": "Message shown if passed"
         },
         "failDescription": {
           "type": "string",
           "minLength": 3,
-          "description": "Message shown if any command in 'cmd' exits with non-zero."
+          "description": "Message shown if failed"
         }
       },
       "additionalProperties": false,
@@ -57,9 +62,142 @@
         "code",
         "title",
         "description",
-        "cmd",
+        "cmds",
         "passDescription",
         "failDescription"
+      ]
+    },
+    "Cmd": {
+      "properties": {
+        "exec": {
+          "$ref": "#/$defs/Exec",
+          "description": "Execution details"
+        },
+        "passScore": {
+          "type": "integer",
+          "description": "Score added if passed",
+          "default": 1
+        },
+        "failScore": {
+          "type": "integer",
+          "description": "Score added if failed",
+          "default": -1
+        },
+        "stdOutRule": {
+          "$ref": "#/$defs/EvaluationRule",
+          "description": "Rule for stdout evaluation"
+        },
+        "stdErrRule": {
+          "$ref": "#/$defs/EvaluationRule",
+          "description": "Rule for stderr evaluation"
+        },
+        "exitCodeRules": {
+          "items": {
+            "$ref": "#/$defs/ExitCodeRule"
+          },
+          "type": "array",
+          "description": "Rules for exit code evaluation"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "exec"
+      ]
+    },
+    "EvaluationRule": {
+      "properties": {
+        "regex": {
+          "type": "string",
+          "description": "Regex to match against output"
+        },
+        "includeStdErr": {
+          "type": "boolean",
+          "description": "Include stderr in regex evaluation",
+          "default": false
+        },
+        "func": {
+          "type": "string",
+          "description": "JS function for evaluation"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Exec": {
+      "properties": {
+        "shell": {
+          "type": "string",
+          "description": "Shell to use (bash"
+        },
+        "script": {
+          "type": "string",
+          "description": "Script to execute"
+        },
+        "func": {
+          "type": "string",
+          "description": "Embedded JS code"
+        },
+        "gather": {
+          "items": {
+            "$ref": "#/$defs/GatherSpec"
+          },
+          "type": "array",
+          "description": "Data extraction specs"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ExitCodeRule": {
+      "properties": {
+        "min": {
+          "type": "integer",
+          "description": "Minimum exit code"
+        },
+        "max": {
+          "type": "integer",
+          "description": "Maximum exit code"
+        },
+        "result": {
+          "type": "integer",
+          "description": "Score result (-1"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "result"
+      ]
+    },
+    "GatherSpec": {
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Key in context"
+        },
+        "excludeFromReport": {
+          "type": "boolean",
+          "description": "Hide from final report"
+        },
+        "regex": {
+          "type": "string",
+          "description": "Regex to extract data"
+        },
+        "includeStdErr": {
+          "type": "boolean",
+          "description": "Include stderr in extraction",
+          "default": false
+        },
+        "func": {
+          "type": "string",
+          "description": "JS function for extraction"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "key"
       ]
     },
     "Section": {

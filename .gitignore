@@ -1,4 +1,4 @@
 reports/
-playbook**.yaml
+**playbook**
 node_modules
-ComplianceProbe-
+compliance-probe*

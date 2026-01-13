@@ -1,14 +1,89 @@
 package main
 
 type Assertion struct {
-	Code            string   `yaml:"code" json:"code" jsonschema:"description=Unique code for the assertion,minLength=3"`
-	Title           string   `yaml:"title" json:"title" jsonschema:"description=Title of the assertion,minLength=3"`
-	Description     string   `yaml:"description" json:"description" jsonschema:"description=Detailed description of what is being checked,minLength=3"`
-	Cmd             []string `yaml:"cmd" json:"cmd" jsonschema:"description=List of commands to execute for the assertion,minItems=1"`
-	PreCmd          []string `yaml:"preCmd,omitempty" json:"preCmd,omitempty" jsonschema:"description=Commands to run before the main check"`
-	PostCmd         []string `yaml:"postCmd,omitempty" json:"postCmd,omitempty" jsonschema:"description=Commands to run after the main check"`
-	PassDescription string   `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if all commands in 'cmd' exit with 0.,minLength=3"`
-	FailDescription string   `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if any command in 'cmd' exits with non-zero.,minLength=3"`
+	Code            string `yaml:"code" json:"code" jsonschema:"description=Unique code for the assertion,minLength=3"`
+	Title           string `yaml:"title" json:"title" jsonschema:"description=Title of the assertion,minLength=3"`
+	Description     string `yaml:"description" json:"description" jsonschema:"description=Detailed description of what is being checked,minLength=3"`
+	PreCmds         []Exec `yaml:"preCmds,omitempty" json:"preCmds,omitempty" jsonschema:"description=Executions before main commands"`
+	Cmds            []Cmd  `yaml:"cmds" json:"cmds" jsonschema:"description=Main command units to execute,minItems=1"`
+	PostCmds        []Exec `yaml:"postCmds,omitempty" json:"postCmds,omitempty" jsonschema:"description=Executions after main commands"`
+	MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed,default=1"`
+	PassDescription string `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if passed,minLength=3"`
+	FailDescription string `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if failed,minLength=3"`
+}
+
+func (a Assertion) GetMinPassingScore() int {
+	if a.MinPassingScore == nil {
+		return 1
+	}
+	return *a.MinPassingScore
+}
+
+type Cmd struct {
+	Exec          Exec           `yaml:"exec" json:"exec" jsonschema:"description=Execution details"`
+	PassScore     *int           `yaml:"passScore,omitempty" json:"passScore,omitempty" jsonschema:"description=Score added if passed,default=1"`
+	FailScore     *int           `yaml:"failScore,omitempty" json:"failScore,omitempty" jsonschema:"description=Score added if failed,default=-1"`
+	StdOutRule    EvaluationRule `yaml:"stdOutRule,omitempty" json:"stdOutRule,omitempty" jsonschema:"description=Rule for stdout evaluation"`
+	StdErrRule    EvaluationRule `yaml:"stdErrRule,omitempty" json:"stdErrRule,omitempty" jsonschema:"description=Rule for stderr evaluation"`
+	ExitCodeRules []ExitCodeRule `yaml:"exitCodeRules,omitempty" json:"exitCodeRules,omitempty" jsonschema:"description=Rules for exit code evaluation"`
+}
+
+func (c Cmd) GetPassScore() int {
+	if c.PassScore == nil {
+		return 1
+	}
+	return *c.PassScore
+}
+
+func (c Cmd) GetFailScore() int {
+	if c.FailScore == nil {
+		return -1
+	}
+	return *c.FailScore
+}
+
+type Exec struct {
+	Shell    string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell to use (bash, powershell, sh)"`
+	Script   string       `yaml:"script,omitempty" json:"script,omitempty" jsonschema:"description=Script to execute"`
+	Func     string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code"`
+	FuncFile string       `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+	Gather   []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
+}
+
+type EvaluationRule struct {
+	Regex         string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to match against output"`
+	IncludeStdErr *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
+	Func          string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for evaluation"`
+	FuncFile      string `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+}
+
+func (r EvaluationRule) GetIncludeStdErr() bool {
+	if r.IncludeStdErr == nil {
+		return false
+	}
+	return *r.IncludeStdErr
+}
+
+type GatherSpec struct {
+	Key               string `yaml:"key" json:"key" jsonschema:"description=Key in context"`
+	ExcludeFromReport bool   `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide from final report"`
+	Regex             string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to extract data"`
+	IncludeStdErr     *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in extraction,default=false"`
+	Func              string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for extraction"`
+	FuncFile          string `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+}
+
+func (g GatherSpec) GetIncludeStdErr() bool {
+	if g.IncludeStdErr == nil {
+		return false
+	}
+	return *g.IncludeStdErr
+}
+
+type ExitCodeRule struct {
+	Min    *int `yaml:"min,omitempty" json:"min,omitempty" jsonschema:"description=Minimum exit code"`
+	Max    *int `yaml:"max,omitempty" json:"max,omitempty" jsonschema:"description=Maximum exit code"`
+	Result int  `yaml:"result" json:"result" jsonschema:"description=Score result (-1, 0, 1)"`
 }
 
 type Section struct {
