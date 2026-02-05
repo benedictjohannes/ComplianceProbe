@@ -45,7 +45,7 @@ ComplianceProbe uses an embedded **[Goja](https://github.com/dop251/goja)** engi
 
 ## 🖇️ TypeScript Type Definitions
 
-To help you get started, this repository includes a `compliance.d.ts` file with all the necessary type definitions. You can use these to ensure your scripts match the expected signatures.
+To help you get started, this repository includes a [`compliance.d.ts`](./compliance.d.ts) file with all the necessary type definitions. You can use these to ensure your scripts match the expected signatures.
 
 ### Using the Type Definitions
 In your `.ts` files, you use `export default` to define the entry point. The builder will transpile this and ensure it's correctly called by the agent.
