@@ -17,7 +17,15 @@ Whether you are auditing a desktop for security standards or monitoring server h
 -   **🛠️ Preprocessing Pipeline**: Write complex logic in separate `.js` or `.ts` files and "bake" them into a single portable playbook using the builder tool.
 -   **✅ Schema Validation**: Built-in JSON schema generation to ensure your playbooks are correctly formatted.
 
-## 📦 Installation
+## 🎯 Use Cases
+
+-   **🌍 Adaptive Fleet Audits**: Run compliance checks across Linux, Windows, and macOS using a single **"Universal Playbook"** that adapts logic at runtime via JavaScript, or maintain **platform-specific playbooks** for targeted simplicity.
+-   **🛡️ Dynamic Security Chaining**: Go beyond static checks by extracting data (like current user or PID) in one step and using it to drive subsequent assertions in the same audit.
+-   **� Privacy-Aware Secret Validation**: Audit sensitive configurations for keys or PII without leaking them. Extract values for internal logic while explicitly excluding them from the final JSON/Markdown reports.
+-   **📈 Weighted Compliance Scoring**: Move past binary Pass/Fail results. Assign scores to assertions to generate a numerical "Security Health" grade for your systems.
+-   **🛠️ Pre-Flight Environment Checks**: Verify system integrity—from kernel versions to script syntax—before deploying applications or onboarding new developer machines.
+
+## �📦 Installation
 
 Download the binary for your platform from the [releases](https://github.com/benedictjohannes/ComplianceProbe/releases) page:
 
@@ -56,7 +64,7 @@ The project uses Go's build tags to separate the runtime agent from the develope
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/) 1.24.5+
+- [Go](https://go.dev/dl/) 1.24+
 
 ### Build Agent Binaries
 
