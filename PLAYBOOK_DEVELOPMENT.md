@@ -34,7 +34,7 @@ assertions:
 
 ## 📜 TypeScript Logic & Runtime
 
-ComplianceProbe uses an embedded **Goja** engine (ECMAScript 5.1) for execution. While the runtime operates on JS, the **Builder** leverages `esbuild` to support TypeScript during development.
+ComplianceProbe uses an embedded **[Goja](https://github.com/dop251/goja)** engine (ECMAScript 5.1) for execution. While the runtime operates on JS, the **Builder** leverages `esbuild` to support TypeScript during development.
 
 ### 🛡️ Sandbox Restrictions
 - **No Node.js APIs**: You cannot use `fs`, `path`, `http`, etc.

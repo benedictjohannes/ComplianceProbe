@@ -10,7 +10,7 @@ Whether you are auditing a desktop for security standards or monitoring server h
 
 -   **🔍 Automated Compliance Checks**: Group assertions into logical sections (e.g., OS Integrity, IAM, Data Protection).
 -   **🚀 Multi-Platform support**: Native binaries for Linux, Windows, and macOS (Intel & ARM).
--   **JS Scripting & Logic**: Dynamic script generation and output evaluation using an embedded JavaScript engine (Goja).
+-   **JS Scripting & Logic**: Dynamic script generation and output evaluation using an embedded JavaScript engine ([Goja](https://github.com/dop251/goja)).
 -   **📊 Comprehensive Reporting**: Generates reports in three formats:
     -   **Markdown**: Human-readable summary for documentation.
     -   **JSON**: Machine-readable data for integration with other tools.
