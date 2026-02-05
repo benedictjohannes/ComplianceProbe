@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=./requirements.schema.json
+# yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/download/latest/requirements.schema.json
 title: "Advanced Compliance Playbook (Full Feature Showcase)"
 
 sections:
