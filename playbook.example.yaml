@@ -1,5 +1,14 @@
 # yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/download/latest/requirements.schema.json
-title: "Advanced Compliance Playbook (Full Feature Showcase)"
+title: "Advanced Compliance Playbook Example (Feature Showcase)"
+
+# Core Concepts:
+# 1. Sections: Logical groups of assertions (e.g., "System Foundation", "Identity").
+# 2. Assertions: Individual check units with their own Pass/Fail verdict.
+# 3. Context (AssertionContext): 
+#    - Data gathered via 'gather' is stored in a local context.
+#    - SCOPE: Strictly per-assertion. Data is NOT shared between different assertions.
+#    - LIFECYCLE: Persists across 'preCmds', 'cmds', and 'postCmds' within the same assertion.
+#    - USAGE: Can be used to drive dynamic logic in subsequent commands via JavaScript.
 
 sections:
   - title: "1. System Foundation"
@@ -37,7 +46,8 @@ sections:
         cmds:
           - exec:
               script: "whoami"
-              # 'gather' extracts data into 'assertionContext' for use in later commands.
+              # 'gather' extracts data into 'assertionContext' for use in later commands within the SAME assertion.
+              # Note: This context is per-assertion and is NOT shared globally across the playbook.
               gather:
                 - key: "current_user"
                   regex: "(.+)"

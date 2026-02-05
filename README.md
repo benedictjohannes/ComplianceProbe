@@ -22,7 +22,7 @@ Whether you are auditing a desktop for security standards or monitoring server h
 ## 🎯 Use Cases
 
 -   **🌍 Adaptive Fleet Audits**: Run compliance checks across Linux, Windows, and macOS using a single **"Universal Playbook"** that adapts logic at runtime via JavaScript, or maintain **platform-specific playbooks** for targeted simplicity.
--   **🛡️ Dynamic Security Chaining**: Go beyond static checks by extracting data (like current user or PID) in one step and using it to drive subsequent assertions in the same audit.
+-   **🛡️ Dynamic Security Chaining**: Go beyond static checks by extracting data (like current user or PID) in one step and using it to drive subsequent commands within the same assertion.
 -   **� Privacy-Aware Secret Validation**: Audit sensitive configurations for keys or PII without leaking them. Extract values for internal logic while explicitly excluding them from the final JSON/Markdown reports.
 -   **📈 Weighted Compliance Scoring**: Move past binary Pass/Fail results. Assign scores to assertions to generate a numerical "Security Health" grade for your systems.
 -   **🛠️ Pre-Flight Environment Checks**: Verify system integrity—from kernel versions to script syntax—before deploying applications or onboarding new developer machines.
