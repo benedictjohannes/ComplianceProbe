@@ -19,7 +19,7 @@ Whether you are auditing a desktop for security standards or monitoring server h
 
 ## 📦 Installation
 
-Download the binary for your platform from the [releases](https://github.com/your-repo/ComplianceProbe/releases) page:
+Download the binary for your platform from the [releases](https://github.com/benedictjohannes/ComplianceProbe/releases) page:
 
 -   `compliance-probe-linux`
 -   `compliance-probe-windows.exe`
