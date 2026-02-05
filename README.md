@@ -102,16 +102,14 @@ make test
 
 ## 🏗️ Developer Tools
 
-ComplianceProbe includes a "builder" mode for developers creating complex playbooks.
+ComplianceProbe includes a **Builder** personality (`compliance-probe-builder`) designed for developers creating and managing complex playbooks.
 
--   **Generate Schema**: Create a JSON schema for IDE autocompletion:
-    ```bash
-    make schema
-    ```
--   **Preprocess**: Bake external JS/TS files into a standalone YAML:
-    ```bash
-    ./compliance-probe-builder --preprocess --input raw-playbook.yaml --output playbook.yaml
-    ```
+-   **Generate Schema**: Create a JSON schema for IDE autocompletion (VS Code, etc).
+-   **Preprocessing Pipeline**: Use `funcFile` to externalize logic into TypeScript files, which are then transpiled and "baked" into the final playbook.
+
+For a detailed guide on using **TypeScript**, external scripts, and the preprocessing pipeline, see:
+
+👉 **[Playbook Development Guide](./PLAYBOOK_DEVELOPMENT.md)**
 
 ## ⚖️ License
 

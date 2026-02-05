@@ -118,7 +118,11 @@
         },
         "func": {
           "type": "string",
-          "description": "JS function for evaluation"
+          "description": "JS function for evaluation. Signature: (stdout, stderr, assertionContext) =\u003e -1 | 0 | 1"
+        },
+        "funcFile": {
+          "type": "string",
+          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
         }
       },
       "additionalProperties": false,
@@ -128,7 +132,7 @@
       "properties": {
         "shell": {
           "type": "string",
-          "description": "Shell to use (bash"
+          "description": "Shell to use (eg: bash, powershell, sh)"
         },
         "script": {
           "type": "string",
@@ -136,7 +140,11 @@
         },
         "func": {
           "type": "string",
-          "description": "Embedded JS code"
+          "description": "Embedded JS code. Signature: ({ assertionContext, env, os, arch, user, cwd }) =\u003e string"
+        },
+        "funcFile": {
+          "type": "string",
+          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
         },
         "gather": {
           "items": {
@@ -161,7 +169,7 @@
         },
         "result": {
           "type": "integer",
-          "description": "Score result (-1"
+          "description": "Score result (-1, 0, 1)"
         }
       },
       "additionalProperties": false,
@@ -191,7 +199,11 @@
         },
         "func": {
           "type": "string",
-          "description": "JS function for extraction"
+          "description": "JS function for extraction. Signature: (stdout, stderr, assertionContext) =\u003e string"
+        },
+        "funcFile": {
+          "type": "string",
+          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
         }
       },
       "additionalProperties": false,

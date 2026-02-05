@@ -43,18 +43,18 @@ func (c Cmd) GetFailScore() int {
 }
 
 type Exec struct {
-	Shell    string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell to use (bash, powershell, sh)"`
+	Shell    string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell to use (eg: bash\\, powershell\\, sh)"`
 	Script   string       `yaml:"script,omitempty" json:"script,omitempty" jsonschema:"description=Script to execute"`
-	Func     string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code"`
-	FuncFile string       `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+	Func     string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code. Signature: ({ assertionContext\\, env\\, os\\, arch\\, user\\, cwd }) => string"`
+	FuncFile string       `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
 	Gather   []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
 }
 
 type EvaluationRule struct {
 	Regex         string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to match against output"`
 	IncludeStdErr *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
-	Func          string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for evaluation"`
-	FuncFile      string `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+	Func          string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for evaluation. Signature: (stdout\\, stderr\\, assertionContext) => -1 | 0 | 1"`
+	FuncFile      string `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
 }
 
 func (r EvaluationRule) GetIncludeStdErr() bool {
@@ -68,9 +68,9 @@ type GatherSpec struct {
 	Key               string `yaml:"key" json:"key" jsonschema:"description=Key in context"`
 	ExcludeFromReport bool   `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide from final report"`
 	Regex             string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to extract data"`
-	IncludeStdErr     *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in extraction,default=false"`
-	Func              string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for extraction"`
-	FuncFile          string `yaml:"funcFile,omitempty" json:"-" jsonschema:"description=Path to JS/TS file (Builder only)"`
+	IncludeStdErr     *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
+	Func              string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for extraction. Signature: (stdout\\, stderr\\, assertionContext) => string"`
+	FuncFile          string `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
 }
 
 func (g GatherSpec) GetIncludeStdErr() bool {
@@ -83,7 +83,7 @@ func (g GatherSpec) GetIncludeStdErr() bool {
 type ExitCodeRule struct {
 	Min    *int `yaml:"min,omitempty" json:"min,omitempty" jsonschema:"description=Minimum exit code"`
 	Max    *int `yaml:"max,omitempty" json:"max,omitempty" jsonschema:"description=Maximum exit code"`
-	Result int  `yaml:"result" json:"result" jsonschema:"description=Score result (-1, 0, 1)"`
+	Result int  `yaml:"result" json:"result" jsonschema:"description=Score result (-1\\, 0\\, 1)"`
 }
 
 type Section struct {
