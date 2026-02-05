@@ -1,0 +1,130 @@
+# yaml-language-server: $schema=./requirements.schema.json
+title: "Advanced Compliance Playbook (Full Feature Showcase)"
+
+sections:
+  - title: "1. System Foundation"
+    description: 
+      - "Checks fundamental operating system properties and kernel versions."
+    assertions:
+      - code: KERNEL_MODERN
+        title: "Kernel Versioning"
+        description: "Verify the system is running a security-patched kernel (v6.0+)."
+        cmds:
+          - exec:
+              # 'script' is the primary way to run shell commands.
+              script: "uname -r"
+            # 'regex' evaluates stdout. Simple match = Pass (1), No match = Fail (-1).
+            stdOutRule:
+              regex: "^[6-9]\\."
+            # 'passScore' and 'failScore' (Optional) allow for weighted results.
+            passScore: 2
+            failScore: -1
+        # 'minPassingScore' (Optional, Default: 1) determines the assertion verdict.
+        minPassingScore: 1
+        passDescription: "System is running a modern, supported kernel."
+        failDescription: "Kernel version is outdated; potential security risk."
+
+  - title: "2. Identity Tracking"
+    description:
+      - "Audits user identity and shell configurations."
+    assertions:
+      - code: SHELL_AUDIT
+        title: "Login Shell Validation"
+        description: "Ensures the current user is assigned a standard Bourne-compatible shell."
+        # 'preCmds' (Optional) run before main commands; results aren't reported.
+        preCmds:
+          - script: "echo 'Starting user audit...'"
+        cmds:
+          - exec:
+              script: "whoami"
+              # 'gather' extracts data into 'assertionContext' for use in later commands.
+              gather:
+                - key: "current_user"
+                  regex: "(.+)"
+            passScore: 0
+          - exec:
+              # 'func' in an exec block uses JS to generate a dynamic shell script.
+              func: |
+                ({ assertionContext }) => {
+                  return "getent passwd " + assertionContext.current_user + " | cut -d: -f7"
+                }
+            stdOutRule:
+              regex: "/bin/(bash|zsh)"
+        # 'postCmds' (Optional) run after all commands in the assertion settle.
+        postCmds:
+          - script: "echo 'User audit complete.'"
+        passDescription: "The assigned login shell meets security standards."
+        failDescription: "The user is assigned a non-standard or restricted shell."
+
+  - title: "3. Application Security"
+    description:
+      - "Audits application configurations and secrets management."
+    assertions:
+      - code: SECRET_VISIBILITY
+        title: "Secret Key Permissions"
+        description: "Checks for the presence of a secret key without leaking it to reports."
+        cmds:
+          - exec:
+              script: "grep 'SECRET_KEY' /etc/app/config.env"
+              gather:
+                - key: "raw_key"
+                  regex: "=(.*)"
+                  # 'excludeFromReport' prevents this value from appearing in the JSON/Markdown reports.
+                  excludeFromReport: true
+            # 'exitCodeRules' allow mapping specific exit codes to pass/fail/neutral scores.
+            exitCodeRules:
+              - min: 0
+                max: 0
+                result: 1 # Pass
+              - min: 1
+                max: 1
+                result: 0 # Neutral (e.g. key missing is not a failure here)
+              - result: -1 # All other exit codes are failures
+        passDescription: "Security configuration file was handled correctly."
+        failDescription: "A system error occurred while accessing security configurations."
+
+  - title: "4. Cross-Platform Logic"
+    description:
+      - "Audits environment variables across different operating systems."
+    assertions:
+      - code: CROSS_OS_HOME
+        title: "Home Directory Resolution"
+        description: "Validates that the HOME variable is resolvable regardless of the OS."
+        cmds:
+          - exec:
+              # JS 'func' has access to 'os', 'arch', 'env', 'user', and 'cwd'.
+              func: |
+                ({ os, env }) => {
+                  if (os === 'linux' || os === 'mac') return "echo $HOME";
+                  if (os === 'windows') return "echo %USERPROFILE%";
+                  return "echo unknown";
+                }
+              # 'shell' can explicitly target 'bash', 'sh', or 'powershell'.
+              shell: "bash"
+            stdOutRule:
+              # A JS 'func' in a rule must return -1 (fail), 0 (neutral), or 1 (pass).
+              func: |
+                (stdout, stderr, context) => {
+                  return stdout.trim().length > 0 ? 1 : -1;
+                }
+        passDescription: "User home directory path was successfully identified."
+        failDescription: "Could not resolve the user home directory."
+
+  - title: "5. Filesystem Integrity"
+    description:
+      - "Checks for syntax errors and corruption in critical system files."
+    assertions:
+      - code: PROFILE_SYNTAX
+        title: "Global Profile Syntax"
+        description: "Ensures the global /etc/profile script has no syntax errors."
+        cmds:
+          - exec:
+              script: "bash -n /etc/profile"
+            # 'stdErrRule' allows evaluating the error stream directly for scoring.
+            stdErrRule:
+              func: |
+                (stdout, stderr) => {
+                  return stderr.trim().length === 0 ? 1 : -1;
+                }
+        passDescription: "Global profile syntax is clean."
+        failDescription: "Syntax errors detected in the global profile!"

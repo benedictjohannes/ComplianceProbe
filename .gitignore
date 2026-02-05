@@ -3,5 +3,6 @@
 
 reports/
 **playbook**
+!playbook.example.yaml
 node_modules
 compliance-probe*
