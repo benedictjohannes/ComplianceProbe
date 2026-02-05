@@ -1,5 +1,7 @@
 # ComplianceProbe 🛡️
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/benedictjohannes/ComplianceProbe/release.yml?style=flat-square)](https://github.com/benedictjohannes/ComplianceProbe/actions) [![License: MIT](https://img.shields.io/github/license/benedictjohannes/ComplianceProbe?color=yellow&style=flat-square)](https://github.com/benedictjohannes/ComplianceProbe/blob/master/LICENSE)
+
 **ComplianceProbe** is a cross-platform security compliance reporting agent. It executes a series of automated checks defined in a YAML "playbook" to verify system integrity, security configurations, and hardware state.
 
 Whether you are auditing a desktop for security standards or monitoring server health, ComplianceProbe provides a flexible, scriptable, and reproducible way to generate detailed compliance reports.
