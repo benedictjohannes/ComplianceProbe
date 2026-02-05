@@ -45,13 +45,13 @@ ComplianceProbe uses an embedded **[Goja](https://github.com/dop251/goja)** engi
 
 ## 🖇️ TypeScript Type Definitions
 
-To help you get started, this repository includes a [`compliance.d.ts`](./compliance.d.ts) file with all the necessary type definitions. You can use these to ensure your scripts match the expected signatures.
+To help you get started, this repository includes a [`playbook.d.ts`](./playbook.d.ts) file with all the necessary type definitions. You can use these to ensure your scripts match the expected signatures.
 
 ### Using the Type Definitions
 In your `.ts` files, you use `export default` to define the entry point. The builder will transpile this and ensure it's correctly called by the agent.
 
 ```typescript
-import type { ScriptContext, Evaluator } from "../compliance";
+import type { ScriptContext, Evaluator } from "../playbook";
 
 /**
  * The default export must be the function signature expected by the agent.
@@ -69,7 +69,7 @@ The agent expects the transpiled file to result in a function. Using `export def
 Generates the shell command to run based on the current environment.
 
 ```typescript
-import type { ScriptContext } from "../compliance";
+import type { ScriptContext } from "../playbook";
 
 export default ({ assertionContext, os, env }: ScriptContext): string => {
   if (os === 'windows') {
@@ -107,7 +107,7 @@ export default (stdout: string, stderr: string, context: any): string => {
 
 ## 🛠️ Builder Commands Summary
 
-- **Generate Schema**: Create `requirements.schema.json` for VS Code autocompletion.
+- **Generate Schema**: Create `playbook.schema.json` for VS Code autocompletion.
   ```bash
   ./compliance-probe-builder --schema
   ```

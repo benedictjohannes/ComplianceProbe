@@ -49,7 +49,8 @@ jobs:
             compliance-probe-builder-windows.exe
             compliance-probe-builder-mac-intel
             compliance-probe-builder-mac-arm
-            requirements.schema.json
+            playbook.schema.json
+            playbook.d.ts
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -73,6 +74,7 @@ jobs:
             compliance-probe-builder-windows.exe
             compliance-probe-builder-mac-intel
             compliance-probe-builder-mac-arm
-            requirements.schema.json
+            playbook.schema.json
+            playbook.d.ts
           prerelease: true
           make_latest: false

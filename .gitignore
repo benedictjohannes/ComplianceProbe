@@ -4,5 +4,6 @@
 reports/
 **playbook**
 !playbook.example.yaml
-node_modules
+!playbook.d.ts
+!playbook.schema.json
 compliance-probe*

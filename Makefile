@@ -15,8 +15,8 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
 
 ## schema: Generate the JSON schema for requirements
-schema: ## Generate requirements.schema.json
-	go run --tags builder . --schema > requirements.schema.json
+schema: ## Generate playbook.schema.json
+	go run --tags builder . --schema > playbook.schema.json
 
 ## build: Build production binaries for all platforms
 build: build-linux build-windows build-mac-intel build-mac-arm ## Build production binaries for all platforms

@@ -122,7 +122,7 @@
         },
         "funcFile": {
           "type": "string",
-          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
+          "description": "Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."
         }
       },
       "additionalProperties": false,
@@ -144,7 +144,7 @@
         },
         "funcFile": {
           "type": "string",
-          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
+          "description": "Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."
         },
         "gather": {
           "items": {
@@ -194,7 +194,7 @@
         },
         "includeStdErr": {
           "type": "boolean",
-          "description": "Include stderr in extraction",
+          "description": "Include stderr in regex evaluation",
           "default": false
         },
         "func": {
@@ -203,7 +203,7 @@
         },
         "funcFile": {
           "type": "string",
-          "description": "Path to JS/TS file (Builder only, using this in real playbook will cause error)"
+          "description": "Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."
         }
       },
       "additionalProperties": false,
