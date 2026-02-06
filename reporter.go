@@ -119,7 +119,19 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 					continue
 				}
 
-				outputs = append(outputs, res.Stdout)
+				if cmd.Exec.ExcludeFromReport {
+					outputs = append(outputs, "[REDACTED]")
+				} else {
+					if res.Stderr == "" {
+						outputs = append(outputs, "# --- STDOUT ---")
+						outputs = append(outputs, res.Stdout)
+						outputs = append(outputs, "# --- STDERR ---")
+						outputs = append(outputs, res.Stderr)
+					} else {
+
+						outputs = append(outputs, res.Stdout)
+					}
+				}
 
 				// Evaluation
 				result := 0
@@ -191,8 +203,34 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 			report.Timestamps.Start = start.Format(time.RFC3339)
 			report.Timestamps.End = time.Now().Format(time.RFC3339)
 
+			// Determine which keys to exclude from report
+			excludedKeys := make(map[string]bool)
+			for _, exec := range assertion.PreCmds {
+				for _, g := range exec.Gather {
+					if g.ExcludeFromReport {
+						excludedKeys[g.Key] = true
+					}
+				}
+			}
+			for _, cmd := range assertion.Cmds {
+				for _, g := range cmd.Exec.Gather {
+					if g.ExcludeFromReport {
+						excludedKeys[g.Key] = true
+					}
+				}
+			}
+			for _, exec := range assertion.PostCmds {
+				for _, g := range exec.Gather {
+					if g.ExcludeFromReport {
+						excludedKeys[g.Key] = true
+					}
+				}
+			}
+
 			for k, v := range context {
-				report.Context[k] = v
+				if !excludedKeys[k] {
+					report.Context[k] = v
+				}
 			}
 			finalReport.Assertions[assertion.Code] = report
 
@@ -230,6 +268,8 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 }
 
 func logExecution(log *strings.Builder, exec Exec, res ExecutionResult, err error) {
+	exclude := exec.ExcludeFromReport
+
 	cmdTitle := "COMMAND"
 	isMultiline := len(strings.Split(exec.Script, "\n")) > 1
 	if isMultiline {
@@ -237,6 +277,7 @@ func logExecution(log *strings.Builder, exec Exec, res ExecutionResult, err erro
 	} else {
 		cmdTitle += ": " + exec.Script
 	}
+
 	log.WriteString(fmt.Sprintf(">>>>> %s <<<<<\n", cmdTitle))
 	if isMultiline {
 		log.WriteString("\n")
@@ -254,17 +295,25 @@ func logExecution(log *strings.Builder, exec Exec, res ExecutionResult, err erro
 
 	if res.Stdout != "" {
 		log.WriteString(">>> STDOUT <<<\n")
-		log.WriteString(res.Stdout)
-		if !strings.HasSuffix(res.Stdout, "\n") {
-			log.WriteString("\n")
+		if exclude {
+			log.WriteString("[REDACTED]\n")
+		} else {
+			log.WriteString(res.Stdout)
+			if !strings.HasSuffix(res.Stdout, "\n") {
+				log.WriteString("\n")
+			}
 		}
 	}
 
 	if res.Stderr != "" {
 		log.WriteString(">>> STDERR <<<\n")
-		log.WriteString(res.Stderr)
-		if !strings.HasSuffix(res.Stderr, "\n") {
-			log.WriteString("\n")
+		if exclude {
+			log.WriteString("[REDACTED]\n")
+		} else {
+			log.WriteString(res.Stderr)
+			if !strings.HasSuffix(res.Stderr, "\n") {
+				log.WriteString("\n")
+			}
 		}
 	}
 	log.WriteString("\n")

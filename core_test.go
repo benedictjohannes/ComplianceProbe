@@ -138,3 +138,103 @@ func TestValidator(t *testing.T) {
 		t.Errorf("validateConfig() error message = %v; want duplicate code error", err)
 	}
 }
+
+func TestExcludeFromReport(t *testing.T) {
+	config := ReportConfig{
+		Title: "Test Exclude",
+		Sections: []Section{
+			{
+				Title: "Section 1",
+				Assertions: []Assertion{
+					{
+						Code:  "EXCL_01",
+						Title: "Exclusion Test",
+						Cmds: []Cmd{
+							{
+								Exec: Exec{
+									Script:            "echo sensitive_data",
+									ExcludeFromReport: true,
+									Gather: []GatherSpec{
+										{
+											Key:               "sensitive",
+											Regex:             "(.*)",
+											ExcludeFromReport: true,
+										},
+										{
+											Key:               "public",
+											Regex:             "(.*)",
+											ExcludeFromReport: false,
+										},
+									},
+								},
+							},
+						},
+						MinPassingScore: &[]int{1}[0],
+					},
+					{
+						Code:  "EXCL_02",
+						Title: "Partial Exclusion Test",
+						Cmds: []Cmd{
+							{
+								Exec: Exec{
+									Script:            "echo partial_secret",
+									ExcludeFromReport: false,
+									Gather: []GatherSpec{
+										{
+											Key:               "hidden_key",
+											Regex:             "(.*)",
+											ExcludeFromReport: true,
+										},
+									},
+								},
+							},
+						},
+						MinPassingScore: &[]int{1}[0],
+					},
+				},
+			},
+		},
+	}
+
+	mockExec := func(e *Exec, context map[string]interface{}) (ExecutionResult, error) {
+		// Simulate what runExec does: calls performGather
+		out := "sensitive_data"
+		if e.Script == "echo partial_secret" {
+			out = "partial_secret"
+		}
+		res := ExecutionResult{Stdout: out, Success: true, ExitCode: 0}
+		for _, g := range e.Gather {
+			context[g.Key] = out
+		}
+		return res, nil
+	}
+
+	report, md, logStr := generateReport(config, mockExec)
+
+	// Case 1: Full Exclusion
+	ass1 := report.Assertions["EXCL_01"]
+	if _, exists := ass1.Context["sensitive"]; exists {
+		t.Errorf("EXCL_01: expected 'sensitive' key to be excluded from report context")
+	}
+	if strings.Contains(md, "sensitive_data") {
+		t.Errorf("EXCL_01: expected sensitive command output to be excluded from markdown report")
+	}
+	if !strings.Contains(logStr, "[REDACTED]") {
+		t.Errorf("EXCL_01: expected [REDACTED] to be present in log")
+	}
+	if !strings.Contains(logStr, "echo sensitive_data") {
+		t.Errorf("EXCL_01: expected command to be visible in log")
+	}
+
+	// Case 2: Partial Exclusion (JSON only)
+	ass2 := report.Assertions["EXCL_02"]
+	if _, exists := ass2.Context["hidden_key"]; exists {
+		t.Errorf("EXCL_02: expected 'hidden_key' to be excluded from report context")
+	}
+	if !strings.Contains(md, "partial_secret") {
+		t.Errorf("EXCL_02: expected 'partial_secret' to be visible in markdown (Exec.ExcludeFromReport is false)")
+	}
+	if !strings.Contains(logStr, "echo partial_secret") {
+		t.Errorf("EXCL_02: expected command to be visible in log")
+	}
+}

@@ -76,10 +76,12 @@ sections:
         cmds:
           - exec:
               script: "grep 'SECRET_KEY' /etc/app/config.env"
+              # 'excludeFromReport' prevents the command output from appearing in the log/markdown reports.
+              excludeFromReport: true
               gather:
                 - key: "raw_key"
                   regex: "=(.*)"
-                  # 'excludeFromReport' prevents this value from appearing in the JSON/Markdown reports.
+                  # 'excludeFromReport' prevents this value from appearing in the JSON reports.
                   excludeFromReport: true
             # 'exitCodeRules' allow mapping specific exit codes to pass/fail/neutral scores.
             exitCodeRules:

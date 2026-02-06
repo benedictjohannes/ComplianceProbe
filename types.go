@@ -43,11 +43,12 @@ func (c Cmd) GetFailScore() int {
 }
 
 type Exec struct {
-	Shell    string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell to use (eg: bash\\, powershell\\, sh)"`
-	Script   string       `yaml:"script,omitempty" json:"script,omitempty" jsonschema:"description=Script to execute"`
-	Func     string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code. Signature: ({ assertionContext\\, env\\, os\\, arch\\, user\\, cwd }) => string"`
-	FuncFile string       `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
-	Gather   []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
+	Shell             string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell to use (eg: bash\\, powershell\\, sh)"`
+	Script            string       `yaml:"script,omitempty" json:"script,omitempty" jsonschema:"description=Script to execute"`
+	Func              string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code. Signature: ({ assertionContext\\, env\\, os\\, arch\\, user\\, cwd }) => string"`
+	FuncFile          string       `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
+	Gather            []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
+	ExcludeFromReport bool         `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide stdout/stderr results from log and markdown report"`
 }
 
 type EvaluationRule struct {
@@ -66,7 +67,7 @@ func (r EvaluationRule) GetIncludeStdErr() bool {
 
 type GatherSpec struct {
 	Key               string `yaml:"key" json:"key" jsonschema:"description=Key in context"`
-	ExcludeFromReport bool   `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide from final report"`
+	ExcludeFromReport bool   `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide key from JSON report"`
 	Regex             string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to extract data"`
 	IncludeStdErr     *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
 	Func              string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for extraction. Signature: (stdout\\, stderr\\, assertionContext) => string"`

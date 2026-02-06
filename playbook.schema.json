@@ -152,6 +152,10 @@
           },
           "type": "array",
           "description": "Data extraction specs"
+        },
+        "excludeFromReport": {
+          "type": "boolean",
+          "description": "Hide stdout/stderr results from log and markdown report"
         }
       },
       "additionalProperties": false,
@@ -186,7 +190,7 @@
         },
         "excludeFromReport": {
           "type": "boolean",
-          "description": "Hide from final report"
+          "description": "Hide key from JSON report"
         },
         "regex": {
           "type": "string",
