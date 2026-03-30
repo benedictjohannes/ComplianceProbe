@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/download/latest/playbook.schema.json
+# yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/latest/download/playbook.schema.json
 title: "Advanced Compliance Playbook Example (Feature Showcase)"
 # Optional: this would get passed to the generated markdown report
 # Generated markdown report would automatically have 

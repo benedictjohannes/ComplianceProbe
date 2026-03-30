@@ -59,7 +59,7 @@ jobs:
         if: github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
+          tag_name: latest_build
           name: Latest Build (Master)
           body: |
             This is an automated build from the latest commit on the `master` branch.
