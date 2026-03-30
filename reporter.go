@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type AssertionReport struct {
@@ -71,8 +73,21 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 	var log strings.Builder
 
 	log.WriteString(fmt.Sprintf(">>>>>>>>>>>> REPORT LOG: %s <<<<<<<<<<<<\n\n", now.Format("060102-150405")))
+	if config.ReportFrontmatter == nil {
+		config.ReportFrontmatter = make(map[string]interface{})
+	}
+	if _, ok := config.ReportFrontmatter["title"]; !ok {
+		config.ReportFrontmatter["title"] = config.Title
+	}
+	if _, ok := config.ReportFrontmatter["date"]; !ok {
+		config.ReportFrontmatter["date"] = now.Format("2006-01-02")
+	}
 
-	md.WriteString(fmt.Sprintf("---\ntitle: %s\ndate: %s\ngeometry: margin=2cm\n---\n\n", config.Title, now.Format("2006-01-02")))
+	fmBytes, _ := yaml.Marshal(config.ReportFrontmatter)
+	md.WriteString("---\n")
+	md.Write(fmBytes)
+	md.WriteString("---\n\n")
+
 	md.WriteString(fmt.Sprintf("# %s\n\nGenerated on: %s\n\n---\n\n", config.Title, now.Format("2006-01-02 15:04:05")))
 
 	finalReport := FinalReport{

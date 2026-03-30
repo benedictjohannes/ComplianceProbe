@@ -255,6 +255,10 @@
       "minLength": 3,
       "description": "Title of the report"
     },
+    "reportFrontmatter": {
+      "type": "object",
+      "description": "Custom YAML frontmatter for markdown reports"
+    },
     "sections": {
       "items": {
         "$ref": "#/$defs/Section"

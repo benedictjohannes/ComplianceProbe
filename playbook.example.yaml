@@ -1,5 +1,10 @@
 # yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/download/latest/playbook.schema.json
 title: "Advanced Compliance Playbook Example (Feature Showcase)"
+# Optional: this would get passed to the generated markdown report
+# Generated markdown report would automatically have 
+# the report's title and date added, if not specified here.
+reportFrontmatter:
+  author: "SRE Team"
 
 # Core Concepts:
 # 1. Sections: Logical groups of assertions (e.g., "System Foundation", "Identity").

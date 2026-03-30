@@ -94,6 +94,7 @@ type Section struct {
 }
 
 type ReportConfig struct {
-	Title    string    `yaml:"title" json:"title" jsonschema:"description=Title of the report,minLength=3"`
-	Sections []Section `yaml:"sections" json:"sections" jsonschema:"description=List of sections in the report,minItems=1"`
+	Title             string                 `yaml:"title" json:"title" jsonschema:"description=Title of the report,minLength=3"`
+	ReportFrontmatter map[string]interface{} `yaml:"reportFrontmatter,omitempty" json:"reportFrontmatter,omitempty" jsonschema:"description=Custom YAML frontmatter for markdown reports"`
+	Sections          []Section              `yaml:"sections" json:"sections" jsonschema:"description=List of sections in the report,minItems=1"`
 }
