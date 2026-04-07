@@ -85,3 +85,33 @@ export interface FinalReport {
   /** Aggregated pass/fail statistics. */
   stats: Stats;
 }
+
+/**
+ * The outer "envelope" for remote report submissions when using 'format: json'.
+ * This structure contains Base64 encoded versions of the report files and their signatures.
+ */
+export interface RemoteSubmission {
+  /** 
+   * Base64 encoded 'report.json'. 
+   * This content matches the FinalReport schema.
+   */
+  json: string;
+  /** 
+   * HMAC-SHA256 signature of the 'json' Base64 string (if signatureSecret is set). 
+   */
+  jsonSignature?: string;
+
+  /** Base64 encoded 'report.md' (human-readable markdown summary). */
+  md: string;
+  /** 
+   * HMAC-SHA256 signature of the 'md' Base64 string (if signatureSecret is set). 
+   */
+  mdSignature?: string;
+
+  /** Base64 encoded 'report.log' (execution trace). */
+  log: string;
+  /** 
+   * HMAC-SHA256 signature of the 'log' Base64 string (if signatureSecret is set). 
+   */
+  logSignature?: string;
+}
