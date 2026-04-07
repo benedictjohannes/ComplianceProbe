@@ -362,3 +362,28 @@ func TestLogExecution_Extended(t *testing.T) {
 		t.Errorf("Redaction in logging failed")
 	}
 }
+
+func TestIsEvidenceMaterial(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"", false},
+		{" ", false},
+		{"\t", false},
+		{"\n", false},
+		{"\r", false},
+		{" \t\n\r ", false},
+		{"a", true},
+		{" a ", true},
+		{"[REDACTED]", false},
+		{"# --- STDOUT ---", false},
+		{"# --- STDERR ---", false},
+	}
+
+	for _, tt := range tests {
+		if got := isEvidenceMaterial(tt.input); got != tt.expected {
+			t.Errorf("isEvidenceMaterial(%q) = %v; want %v", tt.input, got, tt.expected)
+		}
+	}
+}

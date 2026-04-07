@@ -134,9 +134,11 @@ func GenerateReport(config playbook.ReportConfig) FinalResult {
 				if cmd.Exec.ExcludeFromReport {
 					outputs = append(outputs, "[REDACTED]")
 				} else {
-					if res.Stderr == "" {
-						outputs = append(outputs, "# --- STDOUT ---")
-						outputs = append(outputs, res.Stdout)
+					if res.Stderr != "" {
+						if len(res.Stdout) > 0 {
+							outputs = append(outputs, "# --- STDOUT ---")
+							outputs = append(outputs, res.Stdout)
+						}
 						outputs = append(outputs, "# --- STDERR ---")
 						outputs = append(outputs, res.Stderr)
 					} else {
@@ -253,10 +255,19 @@ func GenerateReport(config playbook.ReportConfig) FinalResult {
 
 			md.WriteString(fmt.Sprintf("### %s\n\n", assertion.Title))
 			md.WriteString(fmt.Sprintf("%s\n\n", assertion.Description))
-			md.WriteString("**Evidence:**\n\n")
-			md.WriteString("```\n")
-			md.WriteString(strings.Join(outputs, "\n") + "\n")
-			md.WriteString("```\n\n")
+			shouldSkipEvidence := true
+			for _, o := range outputs {
+				if isEvidenceMaterial(o) {
+					shouldSkipEvidence = false
+					break
+				}
+			}
+			if !shouldSkipEvidence {
+				md.WriteString("**Evidence:**\n")
+				md.WriteString("```\n")
+				md.WriteString(strings.Join(outputs, "\n") + "\n")
+				md.WriteString("```\n\n")
+			}
 
 			if passed {
 				if assertion.PassDescription != "" {
@@ -282,22 +293,33 @@ func GenerateReport(config playbook.ReportConfig) FinalResult {
 	}
 }
 
+func isEvidenceMaterial(s string) bool {
+	if strings.TrimSpace(s) == "" {
+		return false
+	}
+	if s == "[REDACTED]" || s == "# --- STDOUT ---" || s == "# --- STDERR ---" {
+		return false
+	}
+	return true
+}
+
 func logExecution(log *strings.Builder, exec playbook.Exec, res executor.ExecutionResult, err error) {
 	exclude := exec.ExcludeFromReport
-
+	script := strings.TrimSpace(exec.Script)
 	cmdTitle := "COMMAND"
-	isMultiline := len(strings.Split(exec.Script, "\n")) > 1
+	isMultiline := len(strings.Split(script, "\n")) > 1
 	if isMultiline {
 		cmdTitle = "SCRIPT"
 	} else {
-		cmdTitle += ": " + exec.Script
+		cmdTitle += ": " + script
 	}
 
 	log.WriteString(fmt.Sprintf(">>>>> %s <<<<<\n", cmdTitle))
 	if isMultiline {
-		log.WriteString("\n")
-		log.WriteString(exec.Script)
-		log.WriteString("\n")
+		log.WriteString(script)
+		if !strings.HasSuffix(script, "\n") {
+			log.WriteString("\n")
+		}
 		log.WriteString("<<<<< END SCRIPT")
 		log.WriteString("\n")
 	} else {
