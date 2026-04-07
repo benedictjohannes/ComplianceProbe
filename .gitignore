@@ -3,6 +3,7 @@
 
 reports/
 **playbook**
+!playbook/
 !playbook.example.yaml
 !playbook.d.ts
 !playbook.schema.json

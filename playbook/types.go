@@ -1,4 +1,4 @@
-package main
+package playbook
 
 type Assertion struct {
 	Code            string `yaml:"code" json:"code" jsonschema:"description=Unique code for the assertion,minLength=3"`

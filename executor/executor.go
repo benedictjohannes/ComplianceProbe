@@ -1,7 +1,8 @@
-package main
+package executor
 
 import (
 	"bytes"
+	"compliance-probe/playbook"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,10 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/acarl005/stripansi"
 	"github.com/dop251/goja"
 )
 
-type ExecFunc func(e *Exec, context map[string]interface{}) (ExecutionResult, error)
+type ExecFunc func(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error)
 
 type ExecutionResult struct {
 	Stdout   string
@@ -23,12 +25,12 @@ type ExecutionResult struct {
 	Success  bool
 }
 
-func runExec(e *Exec, context map[string]interface{}) (ExecutionResult, error) {
+func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error) {
 	script := e.Script
 
 	// If Func is provided, it wins and generates the script
 	if e.Func != "" {
-		jsScript, err := runJS(e.Func, context)
+		jsScript, err := RunJS(e.Func, context)
 		if err != nil {
 			return ExecutionResult{}, fmt.Errorf("JS error in Exec.Func: %v", err)
 		}
@@ -43,11 +45,11 @@ func runExec(e *Exec, context map[string]interface{}) (ExecutionResult, error) {
 		return ExecutionResult{Success: true}, nil
 	}
 
-	res := runShell(script, e.Shell)
+	res := RunShell(script, e.Shell)
 
 	// Handle Gathering
 	for _, g := range e.Gather {
-		val, err := performGather(g, res, context)
+		val, err := PerformGather(g, res, context)
 		if err != nil {
 			return res, fmt.Errorf("gather error for key %s: %v", g.Key, err)
 		}
@@ -57,7 +59,7 @@ func runExec(e *Exec, context map[string]interface{}) (ExecutionResult, error) {
 	return res, nil
 }
 
-func runShell(command string, shell string) ExecutionResult {
+func RunShell(command string, shell string) ExecutionResult {
 	var name string
 	var args []string
 
@@ -110,14 +112,14 @@ func runShell(command string, shell string) ExecutionResult {
 	}
 
 	return ExecutionResult{
-		Stdout:   cleanupOutput(stdout.String()),
-		Stderr:   cleanupOutput(stderr.String()),
+		Stdout:   CleanupOutput(stdout.String()),
+		Stderr:   CleanupOutput(stderr.String()),
 		ExitCode: exitCode,
 		Success:  err == nil,
 	}
 }
 
-func runJS(code string, context map[string]interface{}) (string, error) {
+func RunJS(code string, context map[string]interface{}) (string, error) {
 	vm := goja.New()
 
 	// Inject Context
@@ -179,7 +181,7 @@ func runJS(code string, context map[string]interface{}) (string, error) {
 	return val.String(), nil
 }
 
-func performGather(g GatherSpec, res ExecutionResult, context map[string]interface{}) (string, error) {
+func PerformGather(g playbook.GatherSpec, res ExecutionResult, context map[string]interface{}) (string, error) {
 	input := res.Stdout
 	if g.GetIncludeStdErr() && input == "" {
 		input = res.Stderr
@@ -226,7 +228,7 @@ func performGather(g GatherSpec, res ExecutionResult, context map[string]interfa
 	return "", nil
 }
 
-func evaluateRule(rule EvaluationRule, res ExecutionResult, context map[string]interface{}) (int, error) {
+func EvaluateRule(rule playbook.EvaluationRule, res ExecutionResult, context map[string]interface{}) (int, error) {
 	input := res.Stdout
 	if rule.GetIncludeStdErr() && input == "" {
 		input = res.Stderr
@@ -267,4 +269,19 @@ func evaluateRule(rule EvaluationRule, res ExecutionResult, context map[string]i
 	}
 
 	return 0, nil
+}
+
+func CleanupOutput(input string) string {
+	// 1. Use stripansi to handle cross-platform ANSI/CSI/OSC sequences robustly
+	output := stripansi.Strip(input)
+
+	// 2. Explicitly remove BEL and other non-printable control chars
+	output = strings.Map(func(r rune) rune {
+		if r == '\u0007' || (r < 32 && r != '\n' && r != '\r' && r != '\t') {
+			return -1 // Drop the character
+		}
+		return r
+	}, output)
+
+	return strings.TrimSpace(output)
 }

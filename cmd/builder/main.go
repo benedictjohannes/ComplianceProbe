@@ -1,8 +1,11 @@
-//go:build builder
-
 package main
 
 import (
+	"compliance-probe/executor"
+	"compliance-probe/playbook"
+	"compliance-probe/report"
+	"compliance-probe/internal/reportwriter"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +15,83 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func main() {
+	schemaFlag := flag.Bool("schema", false, "Output the configuration JSON schema and exit")
+	preprocessFlag := flag.Bool("preprocess", false, "Preprocess a raw YAML into a baked playbook")
+	inputFlag := flag.String("input", "", "Input raw YAML file (for preprocess)")
+	outputFlag := flag.String("output", "playbook.yaml", "Output baked YAML file (for preprocess)")
+	flag.Parse()
+
+	if *schemaFlag {
+		schema, err := playbook.GenerateSchema()
+		if err != nil {
+			fmt.Printf("❌ Failed to generate schema: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(schema)
+		return
+	}
+
+	if *preprocessFlag {
+		if *inputFlag == "" {
+			fmt.Println("❌ Error: --input is required for --preprocess")
+			os.Exit(1)
+		}
+		runPreprocess(*inputFlag, *outputFlag)
+		return
+	}
+
+	// Default: Run Agent Report
+	configPath := getConfigPath()
+	if configPath == "" {
+		fmt.Println("❌ Error: No playbook provided. Use 'compliance-probe [path/to/playbook.yaml]'")
+		os.Exit(1)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		fmt.Printf("❌ Failed to read playbook %s: %v\n", configPath, err)
+		os.Exit(1)
+	}
+
+	var config playbook.ReportConfig
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		fmt.Printf("❌ Failed to parse YAML: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Validate (builder allows funcFile)
+	if err := playbook.ValidateConfig(config, false); err != nil {
+		fmt.Printf("❌ Validation Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	result := report.GenerateReport(config, executor.RunExec)
+	reportwriter.WriteToFolder(result)
+}
+
+func getConfigPath() string {
+	args := flag.Args()
+	if len(args) > 0 {
+		return args[0]
+	}
+	if fileExists("playbook.yaml") {
+		return "playbook.yaml"
+	}
+	return ""
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+// Preprocess Logic
+
 func runPreprocess(inputPath string, outputPath string) {
 	data, err := os.ReadFile(inputPath)
 	if err != nil {
@@ -19,7 +99,7 @@ func runPreprocess(inputPath string, outputPath string) {
 		os.Exit(1)
 	}
 
-	var config ReportConfig
+	var config playbook.ReportConfig
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		fmt.Printf("❌ Failed to parse YAML: %v\n", err)
@@ -34,8 +114,8 @@ func runPreprocess(inputPath string, outputPath string) {
 		}
 	}
 
-	// Validate (including builder-specific properties before they are ignored)
-	if err := validateConfig(config, false); err != nil {
+	// Validate
+	if err := playbook.ValidateConfig(config, false); err != nil {
 		fmt.Printf("❌ Validation Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -56,7 +136,7 @@ func runPreprocess(inputPath string, outputPath string) {
 	fmt.Printf("🚀 Preprocessing Complete! Baked playbook saved to: %s\n", outputPath)
 }
 
-func processAssertion(a *Assertion, baseDir string) {
+func processAssertion(a *playbook.Assertion, baseDir string) {
 	for i := range a.PreCmds {
 		processExec(&a.PreCmds[i], baseDir)
 	}
@@ -70,7 +150,7 @@ func processAssertion(a *Assertion, baseDir string) {
 	}
 }
 
-func processExec(e *Exec, baseDir string) {
+func processExec(e *playbook.Exec, baseDir string) {
 	if e.FuncFile != "" {
 		code, err := transpile(filepath.Join(baseDir, e.FuncFile))
 		if err != nil {
@@ -93,7 +173,7 @@ func processExec(e *Exec, baseDir string) {
 	}
 }
 
-func processEvalRule(r *EvaluationRule, baseDir string) {
+func processEvalRule(r *playbook.EvaluationRule, baseDir string) {
 	if r.FuncFile != "" {
 		code, err := transpile(filepath.Join(baseDir, r.FuncFile))
 		if err != nil {
@@ -112,8 +192,6 @@ func transpile(path string) (string, error) {
 	}
 
 	codeStr := string(data)
-	// Naive check for module keywords.
-	// Esbuild will handle the actual transpilation.
 	isModule := false
 	if (len(codeStr) > 7 && codeStr[:7] == "export ") ||
 		(len(codeStr) > 7 && codeStr[:7] == "import ") ||
@@ -134,8 +212,6 @@ func transpile(path string) (string, error) {
 		opts.MinifySyntax = true
 	} else {
 		opts.Format = api.FormatDefault
-		// For naked expressions, we avoid aggressive minification that might
-		// eliminate the expression as dead code.
 		opts.MinifyWhitespace = true
 	}
 
@@ -145,7 +221,6 @@ func transpile(path string) (string, error) {
 	}
 
 	if isModule {
-		// Wrap in an IIFE to capture CommonJS exports and return the default one (or the whole object)
 		return fmt.Sprintf("(function(){var exports={};var module={exports:exports};%s;return module.exports.default||module.exports})()", result.Code), nil
 	}
 

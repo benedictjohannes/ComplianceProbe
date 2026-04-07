@@ -1,10 +1,10 @@
-package main
+package report
 
 import (
-	"encoding/json"
+	"compliance-probe/executor"
+	"compliance-probe/playbook"
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type AssertionReport struct {
+type Assertion struct {
 	Timestamps struct {
 		Start string `json:"start"`
 		End   string `json:"end"`
@@ -23,35 +23,7 @@ type AssertionReport struct {
 	Context  map[string]interface{} `json:"context"`
 }
 
-func runReport(config ReportConfig) {
-	now := time.Now()
-	timestamp := now.Format("060102-150405")
-
-	reportsDir := "reports"
-	if _, err := os.Stat(reportsDir); os.IsNotExist(err) {
-		os.MkdirAll(reportsDir, 0755)
-	}
-
-	reportBase := filepath.Join(reportsDir, timestamp+".report")
-	logFile := reportBase + ".log"
-	mdFile := reportBase + ".md"
-	jsonFile := reportBase + ".json"
-
-	finalReport, mdContent, logContent := generateReport(config, runExec)
-
-	os.WriteFile(logFile, []byte(logContent), 0644)
-	os.WriteFile(mdFile, []byte(mdContent), 0644)
-	jsonBytes, _ := json.MarshalIndent(finalReport, "", "  ")
-	os.WriteFile(jsonFile, jsonBytes, 0644)
-
-	fmt.Printf("\n✅ Generation Complete!\n")
-	fmt.Printf("📊 PASS: %d, FAIL: %d\n", finalReport.Stats.Passed, finalReport.Stats.Failed)
-	fmt.Printf("📝 Log: %s\n", logFile)
-	fmt.Printf("📝 Markdown: %s\n", mdFile)
-	fmt.Printf("📊 JSON Report: %s\n", jsonFile)
-}
-
-type ReportStats struct {
+type Stats struct {
 	Passed int `json:"passed"`
 	Failed int `json:"failed"`
 }
@@ -61,14 +33,20 @@ type FinalReport struct {
 		Start string `json:"start"`
 		End   string `json:"end"`
 	} `json:"timestamps"`
-	Username   string                     `json:"username"`
-	OS         string                     `json:"os"`
-	Arch       string                     `json:"arch"`
-	Assertions map[string]AssertionReport `json:"assertions"`
-	Stats      ReportStats                `json:"stats"`
+	Username   string               `json:"username"`
+	OS         string               `json:"os"`
+	Arch       string               `json:"arch"`
+	Assertions map[string]Assertion `json:"assertions"`
+	Stats      Stats                `json:"stats"`
 }
 
-func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string, string) {
+type FinalResult struct {
+	Structured FinalReport
+	Log        string
+	Markdown   string
+}
+
+func GenerateReport(config playbook.ReportConfig, execFunc executor.ExecFunc) FinalResult {
 	now := time.Now()
 	var md strings.Builder
 	var log strings.Builder
@@ -105,7 +83,7 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 		Username:   username,
 		OS:         osName,
 		Arch:       runtime.GOARCH,
-		Assertions: make(map[string]AssertionReport),
+		Assertions: make(map[string]Assertion),
 	}
 	finalReport.Timestamps.Start = now.Format(time.RFC3339)
 
@@ -156,7 +134,6 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 						outputs = append(outputs, "# --- STDERR ---")
 						outputs = append(outputs, res.Stderr)
 					} else {
-
 						outputs = append(outputs, res.Stdout)
 					}
 				}
@@ -188,13 +165,13 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 				}
 
 				if cmd.StdOutRule.Regex != "" || cmd.StdOutRule.Func != "" {
-					verdict, _ := evaluateRule(cmd.StdOutRule, res, context)
+					verdict, _ := executor.EvaluateRule(cmd.StdOutRule, res, context)
 					if verdict != 0 {
 						result = verdict
 					}
 				}
 				if cmd.StdErrRule.Regex != "" || cmd.StdErrRule.Func != "" {
-					verdict, _ := evaluateRule(cmd.StdErrRule, res, context)
+					verdict, _ := executor.EvaluateRule(cmd.StdErrRule, res, context)
 					if verdict != 0 {
 						result = verdict
 					}
@@ -222,7 +199,7 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 				totalFailed++
 			}
 
-			report := AssertionReport{
+			report := Assertion{
 				Passed:   passed,
 				Score:    score,
 				MinScore: assertion.GetMinPassingScore(),
@@ -292,10 +269,14 @@ func generateReport(config ReportConfig, execFunc ExecFunc) (FinalReport, string
 	finalReport.Stats.Passed = totalPassed
 	finalReport.Stats.Failed = totalFailed
 
-	return finalReport, md.String(), log.String()
+	return FinalResult{
+		Structured: finalReport,
+		Markdown:   md.String(),
+		Log:        log.String(),
+	}
 }
 
-func logExecution(log *strings.Builder, exec Exec, res ExecutionResult, err error) {
+func logExecution(log *strings.Builder, exec playbook.Exec, res executor.ExecutionResult, err error) {
 	exclude := exec.ExcludeFromReport
 
 	cmdTitle := "COMMAND"

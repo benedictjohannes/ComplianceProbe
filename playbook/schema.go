@@ -1,16 +1,13 @@
-//go:build builder
-
-package main
+package playbook
 
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/invopop/jsonschema"
 )
 
-func generateSchema() {
+func GenerateSchema() (string, error) {
 	reflector := &jsonschema.Reflector{
 		DoNotReference: false,
 		ExpandedStruct: true,
@@ -19,8 +16,7 @@ func generateSchema() {
 	s := reflector.Reflect(&ReportConfig{})
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
-		fmt.Printf("❌ Failed to generate schema: %v\n", err)
-		os.Exit(1)
+		return "", fmt.Errorf("failed to generate schema: %v", err)
 	}
-	fmt.Println(string(data))
+	return string(data), nil
 }

@@ -1,10 +1,10 @@
-package main
+package playbook
 
 import (
 	"fmt"
 )
 
-func validateConfig(config ReportConfig, isAgent bool) error {
+func ValidateConfig(config ReportConfig, isAgent bool) error {
 	codes := make(map[string]bool)
 
 	for _, section := range config.Sections {

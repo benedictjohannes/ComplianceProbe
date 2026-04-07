@@ -6,12 +6,20 @@ This guide covers advanced techniques for creating and managing ComplianceProbe 
 
 ## 🏗️ The Preprocessing Pipeline (`funcFile`)
 
-While you can write simple shell scripts and regex directly in your YAML, complex logic is better managed in external files. The **Builder** personality (`compliance-probe-builder`) allows you to use the `funcFile` property to "bake" external logic into a single, portable playbook.
+While you can write simple shell scripts and regex directly in your YAML, complex logic is better managed in external files. 
+
+### 🎭 Raw vs. Baked Playbooks
+
+-   **Raw Playbook**: Used during development. It uses the `funcFile` property to point to external `.ts` or `.js` files. 
+    -   *Compatibility*: Only the `compliance-probe-builder` can read these.
+-   **Baked Playbook**: A single, portable YAML file where all external scripts have been transpiled, minified, and inlined into the `func` property.
+    -   *Compatibility*: Both the `compliance-probe` (Agent) and the Builder can run these.
 
 ### 🚀 Workflow
+
 1.  **Draft**: Write a "Raw" YAML playbook using `funcFile` paths.
 2.  **Develop**: Use TypeScript (`.ts`) for external scripts to get full IDE support, type checking, and linting.
-3.  **Bake**: Run the preprocessor:
+3.  **Bake**: Run the preprocessor using the Builder:
     ```bash
     ./compliance-probe-builder --preprocess --input raw-playbook.yaml --output playbook.yaml
     ```
@@ -109,9 +117,13 @@ export default (stdout: string, stderr: string, context: any): string => {
 
 - **Generate Schema**: Create `playbook.schema.json` for VS Code autocompletion.
   ```bash
-  ./compliance-probe-builder --schema
+  ./compliance-probe-builder --schema > playbook.schema.json
   ```
-- **Preprocess**: Transform a development playbook into a production-ready one.
+- **Preprocess**: Transform a development ("raw") playbook into a production-ready ("baked") one.
   ```bash
   ./compliance-probe-builder --preprocess --input <input> --output <output>
+  ```
+- **Test Run (Development)**: You can run a raw playbook directly using the builder without baking it first:
+  ```bash
+  ./compliance-probe-builder raw-playbook.yaml
   ```
