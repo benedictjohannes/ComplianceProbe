@@ -83,7 +83,12 @@ func RunShell(command string, shell string) ExecutionResult {
 	case "bash", "sh":
 		name = shell
 		tmpFile = filepath.Join(tmpDir, fmt.Sprintf("cp_%d.sh", time.Now().UnixNano()))
-		script := fmt.Sprintf("#!/bin/%s\nset -o pipefail\n%s\n", shell, command)
+		var script string
+		if shell == "bash" {
+			script = fmt.Sprintf("#!/bin/bash\nset -o pipefail\n%s\n", command)
+		} else {
+			script = fmt.Sprintf("#!/bin/sh\n%s\n", command)
+		}
 		os.WriteFile(tmpFile, []byte(script), 0755)
 		args = []string{tmpFile}
 	default:
