@@ -104,10 +104,11 @@ func WriteToHTTP(config *playbook.ReportDestinationConfig, res report.FinalResul
 		Timeout: 60 * time.Second,
 	}
 
-	fmt.Printf("📤 Submitting report to: %s (Format: %s)\n", config.URL, config.Format)
+	formatStr := config.Format
 	if config.Format == "" {
-		fmt.Printf("📤 Note: defaulting to multipart format\n")
+		formatStr = "multipart (default)"
 	}
+	fmt.Printf("📤 Submitting report to: %s (Format: %s)\n", config.URL, formatStr)
 
 	resp, err := client.Do(req)
 	if err != nil {
