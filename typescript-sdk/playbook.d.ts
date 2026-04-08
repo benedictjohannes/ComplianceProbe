@@ -313,9 +313,17 @@ export type Playbook = {
    * Default is 'folder'.
    */
   reportDestination?: ReportDestination;
+  
+  /**
+   * Folder path for `reportDestination === 'folder'`
+   * Note that the folder will be created if it doesn't exist,
+   * and the CLI flag `--folder` takes precedence over this field.
+   * Default is 'reports'.
+   */
+  reportDestinationFolder?: string;
 
   /**
-   * Specific configuration for HTTPS submission.
+   * Configuration for `reportDestination === 'https'`
    */
   reportDestinationHttps?: ReportDestinationConfig;
 }
