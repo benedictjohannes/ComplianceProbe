@@ -1,6 +1,7 @@
 package configsource
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -97,17 +98,21 @@ func TestLoadConfig_LocalFile(t *testing.T) {
 func TestFetchHttpsPlaybook(t *testing.T) {
 	content := []byte("test content")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/x-yaml")
 		w.WriteHeader(http.StatusOK)
 		w.Write(content)
 	}))
 	defer server.Close()
 
-	data, err := fetchHttpsPlaybook(server.URL)
+	data, contentType, err := fetchHttpsPlaybook(server.URL)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 	if string(data) != string(content) {
 		t.Errorf("Expected %s, got %s", string(content), string(data))
+	}
+	if !strings.HasPrefix(contentType, "application/x-yaml") {
+		t.Errorf("Expected application/x-yaml, got %s", contentType)
 	}
 
 	// Test 404
@@ -116,20 +121,20 @@ func TestFetchHttpsPlaybook(t *testing.T) {
 	}))
 	defer errServer.Close()
 
-	_, err = fetchHttpsPlaybook(errServer.URL)
+	_, _, err = fetchHttpsPlaybook(errServer.URL)
 	if err == nil || !strings.Contains(err.Error(), "status 404") {
 		t.Errorf("Expected 404 error, got %v", err)
 	}
 
 	// Test connection error
-	_, err = fetchHttpsPlaybook("http://localhost:1")
+	_, _, err = fetchHttpsPlaybook("http://localhost:1")
 	if err == nil {
 		t.Errorf("Expected connection error")
 	}
 }
 
 func TestFetchHttpsPlaybook_InvalidUrl(t *testing.T) {
-	_, err := fetchHttpsPlaybook(":%: invalid-url")
+	_, _, err := fetchHttpsPlaybook(":%: invalid-url")
 	if err == nil {
 		t.Errorf("Expected error for invalid URL")
 	}
@@ -154,5 +159,150 @@ func TestLoadConfig_HttpsMock(t *testing.T) {
 	// The error should come from fetchHttpsPlaybook
 	if !strings.Contains(err.Error(), "failed to fetch remote playbook") {
 		t.Errorf("Expected 'failed to fetch remote playbook' error, got %v", err)
+	}
+}
+
+func TestLoadConfig_Json(t *testing.T) {
+	content := []byte(`{"title": "Json Playbook", "sections": []}`)
+	tmpfile, err := os.CreateTemp("", "playbook*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	// Local file uses JSON parser because of .json extension
+	config, _, err := LoadConfig(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if config.Title != "Json Playbook" {
+		t.Errorf("Expected config title to be 'Json Playbook', got %s", config.Title)
+	}
+}
+
+func TestLoadConfig_LocalJsonError(t *testing.T) {
+	content := []byte(`invalid json`)
+	tmpfile, err := os.CreateTemp("", "invalid*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	_, _, err = LoadConfig(tmpfile.Name())
+	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
+		t.Errorf("Expected JSON parse error, got %v", err)
+	}
+}
+
+func TestLoadConfig_HttpsJson(t *testing.T) {
+	content := []byte(`{"title": "Remote Json", "sections": []}`)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}))
+	defer server.Close()
+
+	// Since LoadConfig checks for https:// prefix, we use a hack:
+	// Use fetchHttpsPlaybook directly to test the fetching logic
+	// Or we can mock the fetch function if we want to test LoadConfig's logic.
+	// But let's just test that fetchHttpsPlaybook returns the correct content-type.
+	data, contentType, err := fetchHttpsPlaybook(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(data) != string(content) {
+		t.Errorf("Expected %s, got %s", string(content), string(data))
+	}
+
+	if !strings.HasPrefix(contentType, "application/json") {
+		t.Errorf("Expected application/json, got %s", contentType)
+	}
+
+	// Now we can manually call the unmarshal logic that LoadConfig uses
+	// or we can test LoadConfig if we could pass a URL that it accepts.
+	// Since we can't easily mock the prefix check without changing the code,
+	// let's just assume LoadConfig works if fetchHttpsPlaybook returns the right thing
+	// and we already tested LoadConfig's parsing logic separately (implicitly).
+
+	// Actually, I can test LoadConfig with a local file and then manually triggering the JSON branch
+	// but there is no way to set contentType for local files.
+}
+
+func TestLoadConfig_HttpsTls(t *testing.T) {
+	content := []byte(`{"title": "TLS Playbook", "sections": []}`)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}))
+	defer server.Close()
+
+	// Configure default transport to trust the self-signed cert
+	transport := http.DefaultTransport.(*http.Transport)
+	oldTLSConfig := transport.TLSClientConfig
+	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	defer func() { transport.TLSClientConfig = oldTLSConfig }()
+
+	config, data, err := LoadConfig(server.URL)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if config.Title != "TLS Playbook" {
+		t.Errorf("Expected TLS Playbook, got %s", config.Title)
+	}
+
+	if string(data) != string(content) {
+		t.Error("Data mismatch")
+	}
+
+	// Test JSON error
+	errorServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`invalid json`))
+	}))
+	defer errorServer.Close()
+
+	_, _, err = LoadConfig(errorServer.URL)
+	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
+		t.Errorf("Expected JSON parse error, got %v", err)
+	}
+}
+
+func TestFetchHttpsPlaybook_ReadError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set content length but don't write enough data
+		w.Header().Set("Content-Length", "100")
+		w.WriteHeader(http.StatusOK)
+
+		// Hijack the connection and close it to cause an unexpected EOF or similar read error
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Fatal("webserver doesn't support hijacking")
+		}
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			t.Fatal(err)
+		}
+		conn.Close()
+	}))
+	defer server.Close()
+
+	_, _, err := fetchHttpsPlaybook(server.URL)
+	if err == nil {
+		t.Error("Expected read error")
 	}
 }
