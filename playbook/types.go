@@ -4,12 +4,12 @@ type Assertion struct {
 	Code            string `yaml:"code" json:"code" jsonschema:"description=Unique code for the assertion,minLength=3"`
 	Title           string `yaml:"title" json:"title" jsonschema:"description=Title of the assertion,minLength=3"`
 	Description     string `yaml:"description" json:"description" jsonschema:"description=Detailed description of what is being checked,minLength=3"`
-	PreCmds         []Exec `yaml:"preCmds,omitempty" json:"preCmds,omitempty" jsonschema:"description=Executions before main commands"`
-	Cmds            []Cmd  `yaml:"cmds" json:"cmds" jsonschema:"description=Main command units to execute,minItems=1"`
-	PostCmds        []Exec `yaml:"postCmds,omitempty" json:"postCmds,omitempty" jsonschema:"description=Executions after main commands"`
-	MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed,default=1"`
-	PassDescription string `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if passed,minLength=3"`
-	FailDescription string `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if failed,minLength=3"`
+	PreCmds         []Exec `yaml:"preCmds,omitempty" json:"preCmds,omitempty" jsonschema:"description=Executions before main commands. Data gathered here persists for the whole assertion."`
+	Cmds            []Cmd  `yaml:"cmds" json:"cmds" jsonschema:"description=Main command units to execute. At least one required.,minItems=1"`
+	PostCmds        []Exec `yaml:"postCmds,omitempty" json:"postCmds,omitempty" jsonschema:"description=Executions after all main commands settle."`
+	MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed (Default: 1),default=1"`
+	PassDescription string `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if the assertion passes,minLength=3"`
+	FailDescription string `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if the assertion fails,minLength=3"`
 }
 
 func (a Assertion) GetMinPassingScore() int {
@@ -21,11 +21,11 @@ func (a Assertion) GetMinPassingScore() int {
 
 type Cmd struct {
 	Exec          Exec           `yaml:"exec" json:"exec" jsonschema:"description=Execution details"`
-	PassScore     *int           `yaml:"passScore,omitempty" json:"passScore,omitempty" jsonschema:"description=Score added if passed,default=1"`
-	FailScore     *int           `yaml:"failScore,omitempty" json:"failScore,omitempty" jsonschema:"description=Score added if failed,default=-1"`
-	StdOutRule    EvaluationRule `yaml:"stdOutRule,omitempty" json:"stdOutRule,omitempty" jsonschema:"description=Rule for stdout evaluation"`
-	StdErrRule    EvaluationRule `yaml:"stdErrRule,omitempty" json:"stdErrRule,omitempty" jsonschema:"description=Rule for stderr evaluation"`
-	ExitCodeRules []ExitCodeRule `yaml:"exitCodeRules,omitempty" json:"exitCodeRules,omitempty" jsonschema:"description=Rules for exit code evaluation"`
+	PassScore     *int           `yaml:"passScore,omitempty" json:"passScore,omitempty" jsonschema:"description=Score added if evaluation passes (Default: 1),default=1"`
+	FailScore     *int           `yaml:"failScore,omitempty" json:"failScore,omitempty" jsonschema:"description=Score added if evaluation fails (Default: -1),default=-1"`
+	StdOutRule    EvaluationRule `yaml:"stdOutRule,omitempty" json:"stdOutRule,omitempty" jsonschema:"description=Rule for stdout evaluation. Takes precedence over exitCodeRules if result is -1 or 1."`
+	StdErrRule    EvaluationRule `yaml:"stdErrRule,omitempty" json:"stdErrRule,omitempty" jsonschema:"description=Rule for stderr evaluation. Takes absolute precedence over stdOutRule if result is -1 or 1."`
+	ExitCodeRules []ExitCodeRule `yaml:"exitCodeRules,omitempty" json:"exitCodeRules,omitempty" jsonschema:"description=Rules for exit code evaluation. Evaluated only if stdOutRule and stdErrRule are neutral."`
 }
 
 func (c Cmd) GetPassScore() int {
@@ -82,9 +82,9 @@ func (g GatherSpec) GetIncludeStdErr() bool {
 }
 
 type ExitCodeRule struct {
-	Min    *int `yaml:"min,omitempty" json:"min,omitempty" jsonschema:"description=Minimum exit code"`
-	Max    *int `yaml:"max,omitempty" json:"max,omitempty" jsonschema:"description=Maximum exit code"`
-	Result int  `yaml:"result" json:"result" jsonschema:"description=Score result (-1\\, 0\\, 1)"`
+	Min    *int `yaml:"min,omitempty" json:"min,omitempty" jsonschema:"description=Minimum exit code (inclusive)"`
+	Max    *int `yaml:"max,omitempty" json:"max,omitempty" jsonschema:"description=Maximum exit code (inclusive)"`
+	Result int  `yaml:"result" json:"result" jsonschema:"description=Score result: -1 (Fail)\\, 0 (Neutral)\\, 1 (Pass). The first matching rule wins."`
 }
 
 type ReportDestination string
@@ -115,10 +115,10 @@ type ReportDestinationConfig struct {
 }
 
 type ReportConfig struct {
-	Title                  string                   `yaml:"title" json:"title" jsonschema:"description=Title of the report,minLength=3"`
-	ReportFrontmatter      map[string]interface{}   `yaml:"reportFrontmatter,omitempty" json:"reportFrontmatter,omitempty" jsonschema:"description=Custom YAML frontmatter for markdown reports"`
-	Sections               []Section                `yaml:"sections" json:"sections" jsonschema:"description=List of sections in the report,minItems=1"`
-	ReportDestination      ReportDestination        `yaml:"reportDestination,omitempty" json:"reportDestination,omitempty" jsonschema:"description=Destination for the report,default=folder,enum=folder,enum=https"`
-	ReportDestinationFolder string                   `yaml:"reportDestinationFolder,omitempty" json:"reportDestinationFolder,omitempty" jsonschema:"description=Folder path for 'folder' report destination"`
-	ReportDestinationHTTPS *ReportDestinationConfig `yaml:"reportDestinationHttps,omitempty" json:"reportDestinationHttps,omitempty" jsonschema:"description=Configuration for HTTPS report destination"`
+	Title                   string                   `yaml:"title" json:"title" jsonschema:"description=Title of the report,minLength=3"`
+	ReportFrontmatter       map[string]interface{}   `yaml:"reportFrontmatter,omitempty" json:"reportFrontmatter,omitempty" jsonschema:"description=Custom metadata merged into the generated markdown report frontmatter."`
+	Sections                []Section                `yaml:"sections" json:"sections" jsonschema:"description=Logical groups of assertions.,minItems=1"`
+	ReportDestination       ReportDestination        `yaml:"reportDestination,omitempty" json:"reportDestination,omitempty" jsonschema:"description=Destination for the report (folder|https),default=folder,enum=folder,enum=https"`
+	ReportDestinationFolder string                   `yaml:"reportDestinationFolder,omitempty" json:"reportDestinationFolder,omitempty" jsonschema:"description=Folder path if reportDestination is 'folder'. Defaults to 'reports'."`
+	ReportDestinationHTTPS  *ReportDestinationConfig `yaml:"reportDestinationHttps,omitempty" json:"reportDestinationHttps,omitempty" jsonschema:"description=Required if reportDestination is 'https'."`
 }

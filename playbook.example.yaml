@@ -1,18 +1,18 @@
 # yaml-language-server: $schema=https://github.com/benedictjohannes/ComplianceProbe/releases/latest/download/playbook.schema.json
 title: "Advanced Compliance Playbook Example (Feature Showcase)"
-# Optional: this would get passed to the generated markdown report
-# Generated markdown report would automatically have 
-# the report's title and date added, if not specified here.
+# Optional: this would be merged into the generated markdown report's YAML frontmatter.
+# Values here override defaults. Title and Date are added automatically if not specified.
 reportFrontmatter:
   author: "SRE Team"
+  classification: "confidential"
 
 # Core Concepts:
 # 1. Sections: Logical groups of assertions (e.g., "System Foundation", "Identity").
 # 2. Assertions: Individual check units with their own Pass/Fail verdict.
 # 3. Context (AssertionContext): 
-#    - Data gathered via 'gather' is stored in a local context.
+#    - Data gathered via gather is stored in a local context.
 #    - SCOPE: Strictly per-assertion. Data is NOT shared between different assertions.
-#    - LIFECYCLE: Persists across 'preCmds', 'cmds', and 'postCmds' within the same assertion.
+#    - LIFECYCLE: Persists across preCmds, cmds, and postCmds within the same assertion.
 #    - USAGE: Can be used to drive dynamic logic in subsequent commands via JavaScript.
 sections:
   - title: "1. System Foundation"
@@ -24,15 +24,15 @@ sections:
         description: "Verify the system is running a security-patched kernel (v6.0+)."
         cmds:
           - exec:
-              # 'script' is the primary way to run shell commands.
+              # script is the primary way to run shell commands.
               script: "uname -r"
-            # 'regex' evaluates stdout. Simple match = Pass (1), No match = Fail (-1).
             stdOutRule:
+              # regex evaluates stdout. Simple match = Pass (1), No match = Fail (-1).
               regex: "^[6-9]\\."
-            # 'passScore' and 'failScore' (Optional) allow for weighted results.
+            # passScore and failScore (Optional) allow for weighted results. Defaults to 1 and -1 respectively.
             passScore: 2
             failScore: -1
-        # 'minPassingScore' (Optional, Default: 1) determines the assertion verdict.
+        # minPassingScore (Optional, Default: 1) determines the assertion verdict.
         minPassingScore: 1
         passDescription: "System is running a modern, supported kernel."
         failDescription: "Kernel version is outdated; potential security risk."
@@ -44,27 +44,29 @@ sections:
       - code: SHELL_AUDIT
         title: "Login Shell Validation"
         description: "Ensures the current user is assigned a standard Bourne-compatible shell."
-        # 'preCmds' (Optional) run before main commands; results aren't reported.
+        # preCmds (Optional) run before main commands; results aren't reported.
         preCmds:
           - script: "echo 'Starting user audit...'"
         cmds:
           - exec:
               script: "whoami"
-              # 'gather' extracts data into 'assertionContext' for use in later commands within the SAME assertion.
-              # Note: This context is per-assertion and is NOT shared globally across the playbook.
+              # gather extracts data into assertionContext for use in later commands within the SAME assertion.
+              # This context persists per-assertion and is NOT shared globally across the playbook.
               gather:
                 - key: "current_user"
                   regex: "(.+)"
             passScore: 0
           - exec:
-              # 'func' in an exec block uses JS to generate a dynamic shell script.
+              # func in an exec block uses JS to generate a dynamic shell script.
               func: |
                 ({ assertionContext }) => {
                   return "getent passwd " + assertionContext.current_user + " | cut -d: -f7"
                 }
             stdOutRule:
               regex: "/bin/(bash|zsh)"
-        # 'postCmds' (Optional) run after all commands in the assertion settle.
+              # includeStdErr (Optional, Default: false) allows checking stderr if stdout is empty.
+              includeStdErr: false
+        # postCmds (Optional) run after all commands in the assertion settle.
         postCmds:
           - script: "echo 'User audit complete.'"
         passDescription: "The assigned login shell meets security standards."
@@ -80,14 +82,15 @@ sections:
         cmds:
           - exec:
               script: "grep 'SECRET_KEY' /etc/app/config.env"
-              # 'excludeFromReport' prevents the command output from appearing in the log/markdown reports.
+              # excludeFromReport prevents the command output from appearing in the log/markdown reports.
               excludeFromReport: true
               gather:
                 - key: "raw_key"
                   regex: "=(.*)"
-                  # 'excludeFromReport' prevents this value from appearing in the JSON reports.
+                  # excludeFromReport prevents this value from appearing in the JSON reports.
                   excludeFromReport: true
-            # 'exitCodeRules' allow mapping specific exit codes to pass/fail/neutral scores.
+            # exitCodeRules allow mapping specific exit codes to pass/fail/neutral scores.
+            # the first match's result wins
             exitCodeRules:
               - min: 0
                 max: 0
@@ -108,48 +111,62 @@ sections:
         description: "Validates that the HOME variable is resolvable regardless of the OS."
         cmds:
           - exec:
-              # JS 'func' has access to 'os', 'arch', 'env', 'user', and 'cwd'.
+              # func can be used to generate a dynamic script
               func: |
-                ({ os, env }) => {
+                ({ 
+                  assertionContext, // object filled by gather (see above)
+                  env, // object filled by os.environ
+                  os, // string
+                  arch, // string
+                  user, // string
+                  cwd // string
+                 }) => {
                   if (os === 'linux' || os === 'mac') return "echo $HOME";
                   if (os === 'windows') return "echo %USERPROFILE%";
                   return "echo unknown";
                 }
-              # 'shell' can explicitly target 'bash', 'sh', or 'powershell'.
+              # shell can explicitly target 'bash', 'sh', or 'powershell'.
+              # defaults to bash (linux), powershell (windows)
+              # If not specified, the commands would be executed directly
               shell: "bash"
+            # stdOutRule allows evaluating the stdout and stderr for scoring.
+            # If specified and returns -1 or 1, , stdOutRule takes precedence over exitCodeRules.
             stdOutRule:
               # A JS 'func' in a rule must return -1 (fail), 0 (neutral), or 1 (pass).
               func: |
-                (stdout, stderr, context) => {
-                  return stdout.trim().length > 0 ? 1 : -1;
+                (stdout, stderr, assertionContext) => {
+                  return stdout.trim().length > 0 ? 1 : 0;
                 }
         passDescription: "User home directory path was successfully identified."
         failDescription: "Could not resolve the user home directory."
 
-  - title: "5. Filesystem Integrity"
+  - title: "5. Network & Services"
     description:
-      - "Checks for syntax errors and corruption in critical system files."
+      - "Audits network configurations and connectivity."
     assertions:
-      - code: PROFILE_SYNTAX
-        title: "Global Profile Syntax"
-        description: "Ensures the global /etc/profile script has no syntax errors."
+      - code: DNS_RESOLVABLE
+        title: "DNS Resolution Check"
+        description: "Ensures the system can resolve external hostnames."
         cmds:
           - exec:
-              script: "bash -n /etc/profile"
-            # 'stdErrRule' allows evaluating the error stream directly for scoring.
+              script: "nslookup google.com"
+            # stdErrRule allows evaluating the stdout and stderr for scoring.
+            # If specified and returns -1 or 1, stdErrRule takes precedence over stdOutRule.
             stdErrRule:
               func: |
-                (stdout, stderr) => {
-                  return stderr.trim().length === 0 ? 1 : -1;
+                (stdout, stderr, assertionContext) => {
+                  return stderr.includes("connection timed out") ? -1 : 0;
                 }
-        passDescription: "Global profile syntax is clean."
-        failDescription: "Syntax errors detected in the global profile!"
+            stdOutRule:
+              regex: "Address: "
+        passDescription: "DNS resolution is working correctly."
+        failDescription: "DNS resolution failed; check network settings or DNS servers."
 
 # sets the report destination: folder (default, write to folder) or https (send to remote server)
 reportDestination: folder
-# if reportdestination is folder, this is the destination directory
-reportDestinationFolder: "reports/example-audit"
-# configure if reportdestination is https
+# folder in which reports would be written if reportdestination is folder. Defaults to "reports".
+reportDestinationFolder: "my-audit-reports"
+# must be configured if reportdestination is https
 reportDestinationHttps:
   url: https://config.internal.company.com/compliance/submission
   # multipart (default) or json

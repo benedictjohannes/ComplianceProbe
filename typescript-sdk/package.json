@@ -1,6 +1,6 @@
 {
   "name": "compliance-probe",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "TypeScript type definitions for ComplianceProbe playbooks and reports",
   "repository": {
     "type": "git",

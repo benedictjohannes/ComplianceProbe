@@ -24,7 +24,7 @@
             "$ref": "#/$defs/Exec"
           },
           "type": "array",
-          "description": "Executions before main commands"
+          "description": "Executions before main commands. Data gathered here persists for the whole assertion."
         },
         "cmds": {
           "items": {
@@ -32,29 +32,29 @@
           },
           "type": "array",
           "minItems": 1,
-          "description": "Main command units to execute"
+          "description": "Main command units to execute. At least one required."
         },
         "postCmds": {
           "items": {
             "$ref": "#/$defs/Exec"
           },
           "type": "array",
-          "description": "Executions after main commands"
+          "description": "Executions after all main commands settle."
         },
         "minPassingScore": {
           "type": "integer",
-          "description": "Minimum score to consider assertion as passed",
+          "description": "Minimum score to consider assertion as passed (Default: 1)",
           "default": 1
         },
         "passDescription": {
           "type": "string",
           "minLength": 3,
-          "description": "Message shown if passed"
+          "description": "Message shown if the assertion passes"
         },
         "failDescription": {
           "type": "string",
           "minLength": 3,
-          "description": "Message shown if failed"
+          "description": "Message shown if the assertion fails"
         }
       },
       "additionalProperties": false,
@@ -76,28 +76,28 @@
         },
         "passScore": {
           "type": "integer",
-          "description": "Score added if passed",
+          "description": "Score added if evaluation passes (Default: 1)",
           "default": 1
         },
         "failScore": {
           "type": "integer",
-          "description": "Score added if failed",
+          "description": "Score added if evaluation fails (Default: -1)",
           "default": -1
         },
         "stdOutRule": {
           "$ref": "#/$defs/EvaluationRule",
-          "description": "Rule for stdout evaluation"
+          "description": "Rule for stdout evaluation. Takes precedence over exitCodeRules if result is -1 or 1."
         },
         "stdErrRule": {
           "$ref": "#/$defs/EvaluationRule",
-          "description": "Rule for stderr evaluation"
+          "description": "Rule for stderr evaluation. Takes absolute precedence over stdOutRule if result is -1 or 1."
         },
         "exitCodeRules": {
           "items": {
             "$ref": "#/$defs/ExitCodeRule"
           },
           "type": "array",
-          "description": "Rules for exit code evaluation"
+          "description": "Rules for exit code evaluation. Evaluated only if stdOutRule and stdErrRule are neutral."
         }
       },
       "additionalProperties": false,
@@ -166,15 +166,15 @@
       "properties": {
         "min": {
           "type": "integer",
-          "description": "Minimum exit code"
+          "description": "Minimum exit code (inclusive)"
         },
         "max": {
           "type": "integer",
-          "description": "Maximum exit code"
+          "description": "Maximum exit code (inclusive)"
         },
         "result": {
           "type": "integer",
-          "description": "Score result (-1, 0, 1)"
+          "description": "Score result: -1 (Fail), 0 (Neutral), 1 (Pass). The first matching rule wins."
         }
       },
       "additionalProperties": false,
@@ -291,7 +291,7 @@
     },
     "reportFrontmatter": {
       "type": "object",
-      "description": "Custom YAML frontmatter for markdown reports"
+      "description": "Custom metadata merged into the generated markdown report frontmatter."
     },
     "sections": {
       "items": {
@@ -299,7 +299,7 @@
       },
       "type": "array",
       "minItems": 1,
-      "description": "List of sections in the report"
+      "description": "Logical groups of assertions."
     },
     "reportDestination": {
       "type": "string",
@@ -307,16 +307,16 @@
         "folder",
         "https"
       ],
-      "description": "Destination for the report",
+      "description": "Destination for the report (folder|https)",
       "default": "folder"
     },
     "reportDestinationFolder": {
       "type": "string",
-      "description": "Folder path for 'folder' report destination"
+      "description": "Folder path if reportDestination is 'folder'. Defaults to 'reports'."
     },
     "reportDestinationHttps": {
       "$ref": "#/$defs/ReportDestinationConfig",
-      "description": "Configuration for HTTPS report destination"
+      "description": "Required if reportDestination is 'https'."
     }
   },
   "additionalProperties": false,

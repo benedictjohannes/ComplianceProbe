@@ -2,8 +2,12 @@ import { AssertionContext } from './func';
 
 /**
  * An individual check unit with its own Pass/Fail verdict.
- * Data gathered via 'gather' is stored in a local context (AssertionContext)
- * which is strictly scoped to this assertion and NOT shared with others.
+ * 
+ * CORE CONCEPTS:
+ * 1. Context (AssertionContext): Data gathered via 'gather' is stored in a local context.
+ * 2. Scope: Strictly per-assertion. Data is NOT shared between different assertions.
+ * 3. Lifecycle: The context persists across preCmds, cmds, and postCmds within the same assertion.
+ * 4. Usage: Context can be used to drive dynamic logic in subsequent commands via JavaScript functions.
  */
 export interface Assertion {
   /**
@@ -42,6 +46,7 @@ export interface Assertion {
 
   /**
    * Minimum score required to consider the assertion as passed.
+   * If the sum of command scores is >= minPassingScore, the assertion passes.
    * Default is 1.
    */
   minPassingScore?: number;
@@ -61,6 +66,11 @@ export interface Assertion {
 
 /**
  * A single command unit with execution and evaluation rules.
+ * 
+ * EVALUATION PRECEDENCE:
+ * 1. stdErrRule: If specified and returns -1 or 1, it takes absolute precedence.
+ * 2. stdOutRule: If specified (and stdErrRule is neutral or missing), it takes precedence over exitCodeRules.
+ * 3. exitCodeRules: Evaluated only if both stdout and stderr rules are missing or neutral (0).
  */
 export interface Cmd {
   /**
@@ -201,6 +211,8 @@ export interface GatherSpec {
 
 /**
  * Rule for evaluating exit codes.
+ * 
+ * Logic: The list of rules is evaluated in order; the first match's result wins.
  */
 export interface ExitCodeRule {
   /**
@@ -284,9 +296,10 @@ export interface ReportDestinationConfig {
 /**
  * Root configuration structure for a compliance playbook.
  * 
- * Core Concepts:
+ * CORE CONCEPTS:
  * 1. Sections: Logical groups of assertions (e.g., "System Foundation", "Identity").
  * 2. Assertions: Individual check units with their own Pass/Fail verdict.
+ * 3. Execution Flow: Validates compliance by running shell commands or JS logic.
  */
 export type Playbook = {
   /**
