@@ -2,6 +2,7 @@ package executor
 
 import (
 	"github.com/benedictjohannes/crobe/playbook"
+	"os/exec"
 	"testing"
 )
 
@@ -329,9 +330,13 @@ func TestRunShell(t *testing.T) {
 		t.Errorf("RunShell(bash) = %+v; want Success: true, Stdout: hello world", res)
 	}
 
-	res = RunShell("echo hello world", "zsh", "")
-	if !res.Success || res.Stdout != "hello world" {
-		t.Errorf("RunShell(zsh) = %+v; want Success: true, Stdout: hello world", res)
+	if _, err := exec.LookPath("zsh"); err == nil {
+		res = RunShell("echo hello world", "zsh", "")
+		if !res.Success || res.Stdout != "hello world" {
+			t.Errorf("RunShell(zsh) = %+v; want Success: true, Stdout: hello world", res)
+		}
+	} else {
+		t.Log("Skipping zsh test: zsh not found")
 	}
 
 	// Test pipefail for bash/zsh
@@ -341,9 +346,11 @@ func TestRunShell(t *testing.T) {
 	if res.Success {
 		t.Errorf("RunShell(bash pipefail) should have failed, but succeeded: %+v", res)
 	}
-	res = RunShell("non_existent_command | echo hi", "zsh", "")
-	if res.Success {
-		t.Errorf("RunShell(zsh pipefail) should have failed, but succeeded: %+v", res)
+	if _, err := exec.LookPath("zsh"); err == nil {
+		res = RunShell("non_existent_command | echo hi", "zsh", "")
+		if res.Success {
+			t.Errorf("RunShell(zsh) pipefail should have failed, but succeeded: %+v", res)
+		}
 	}
 
 	// Test full path shell
