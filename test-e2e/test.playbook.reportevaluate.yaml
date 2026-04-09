@@ -85,7 +85,6 @@ sections:
                 }
               shell: "python3"
               scriptFileExtension: "py"
-        postCmds: [{script: "rm random_number1.txt"}]
-        minPassingScore: 5
+        postCmds: [{ script: "rm random_number1.txt" }]
         passDescription: "Report audit successful: Redaction enforced and data integrity verified."
         failDescription: "Report audit failed: Detected data inconsistency or redaction failure."

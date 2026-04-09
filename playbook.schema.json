@@ -43,8 +43,7 @@
         },
         "minPassingScore": {
           "type": "integer",
-          "description": "Minimum score to consider assertion as passed (Default: 1)",
-          "default": 1
+          "description": "Minimum score to consider assertion as passed (Default: sum of all cmds' passScores)"
         },
         "passDescription": {
           "type": "string",
@@ -135,9 +134,17 @@
           "type": "string",
           "description": "Shell/Interpreter to use (eg: bash, powershell, sh). Optional. Defaults: pwsh (windows, falls back to powershell if not found), zsh (mac), bash (linux and others). Note that for bash and powershell, set -o pipefail and $ErrorActionPreference = 'Stop' is added to catch execution errors. Non-shell interpreters like python3 or node are supported. Set to ! to directly execute the script as cmd and args, executed directly (eg: ls -lah)."
         },
+        "shellFunc": {
+          "type": "string",
+          "description": "Embedded JS code that returns the shell to use. Takes precedence over shell. Signature: ({ assertionContext, env, os, arch, user, cwd }) =\u003e string."
+        },
+        "shellFuncFile": {
+          "type": "string",
+          "description": "Path to JS/TS file for shellFunc. BUILDER ONLY."
+        },
         "script": {
           "type": "string",
-          "description": "Script to execute"
+          "description": "Script to execute."
         },
         "scriptFileExtension": {
           "type": "string",

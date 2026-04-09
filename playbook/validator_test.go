@@ -194,6 +194,69 @@ func TestValidateConfig(t *testing.T) {
 			wantError: "contains funcFile in postCmd",
 		},
 		{
+			name: "Agent Mode shellFuncFile Error - PreCmd",
+			config: Playbook{
+				Title: "Test",
+				Sections: []Section{
+					{
+						Title: "S1",
+						Assertions: []Assertion{
+							{
+								Code: "SP01",
+								PreCmds: []Exec{
+									{ShellFuncFile: "test.ts"},
+								},
+							},
+						},
+					},
+				},
+			},
+			isAgent:   true,
+			wantError: "contains shellFuncFile in preCmd",
+		},
+		{
+			name: "Agent Mode shellFuncFile Error - Cmd",
+			config: Playbook{
+				Title: "Test",
+				Sections: []Section{
+					{
+						Title: "S1",
+						Assertions: []Assertion{
+							{
+								Code: "SC01",
+								Cmds: []Cmd{
+									{Exec: Exec{ShellFuncFile: "test.ts"}},
+								},
+							},
+						},
+					},
+				},
+			},
+			isAgent:   true,
+			wantError: "contains shellFuncFile in cmd",
+		},
+		{
+			name: "Agent Mode shellFuncFile Error - PostCmd",
+			config: Playbook{
+				Title: "Test",
+				Sections: []Section{
+					{
+						Title: "S1",
+						Assertions: []Assertion{
+							{
+								Code: "SP02",
+								PostCmds: []Exec{
+									{ShellFuncFile: "test.ts"},
+								},
+							},
+						},
+					},
+				},
+			},
+			isAgent:   true,
+			wantError: "contains shellFuncFile in postCmd",
+		},
+		{
 			name: "Valid Agent Config",
 			config: Playbook{
 				Title: "Test",

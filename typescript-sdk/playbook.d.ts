@@ -123,6 +123,19 @@ export interface Exec {
   shell?: string;
 
   /**
+   * Embedded JS code that returns the shell to use. 
+   * When specified, takes precedence over shell.
+   * Signature: ({ assertionContext, env, os, arch, user, cwd }) => string
+   */
+  shellFunc?: string;
+
+  /**
+   * Path to JS/TS file for shellFunc (BUILDER ONLY).
+   * Using this in a real playbook will cause an error.
+   */
+  shellFuncFile?: string;
+
+  /**
    * Script to execute in the chosen shell.
    */
   script?: string;

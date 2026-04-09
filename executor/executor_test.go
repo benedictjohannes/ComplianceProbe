@@ -208,6 +208,29 @@ func TestRunExec(t *testing.T) {
 	if err != nil || !res.Success {
 		t.Errorf("RunExec(js-empty) = %+v, %v; want Success: true, nil err", res, err)
 	}
+
+	// 7. ShellFunc decides shell
+	e7 := &playbook.Exec{
+		ShellFunc: "() => '!'",
+		Script:    "echo shell_func_test",
+	}
+	res, err = RunExec(e7, context)
+	if err != nil {
+		t.Fatalf("RunExec(shell-func) error: %v", err)
+	}
+	if res.Stdout != "shell_func_test" {
+		t.Errorf("RunExec(shell-func) stdout = %q; want \"shell_func_test\"", res.Stdout)
+	}
+
+	// 8. ShellFunc error
+	e8 := &playbook.Exec{
+		ShellFunc: "() => { throw new Error('shell error') }",
+		Script:    "echo fail",
+	}
+	_, err = RunExec(e8, context)
+	if err == nil {
+		t.Error("RunExec should fail on ShellFunc JS error")
+	}
 }
 
 func TestEvaluateRule(t *testing.T) {

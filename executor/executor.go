@@ -46,7 +46,18 @@ func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult,
 		return ExecutionResult{Success: true}, nil
 	}
 
-	res := RunShell(script, e.Shell, e.ScriptFileExtension)
+	shell := e.Shell
+	if e.ShellFunc != "" {
+		jsShell, err := RunJS(e.ShellFunc, context)
+		if err != nil {
+			return ExecutionResult{}, fmt.Errorf("JS error in Exec.ShellFunc: %v", err)
+		}
+		if jsShell != "" {
+			shell = jsShell
+		}
+	}
+
+	res := RunShell(script, shell, e.ScriptFileExtension)
 
 	// Handle Gathering
 	for _, g := range e.Gather {

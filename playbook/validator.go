@@ -29,11 +29,17 @@ func ValidateConfig(config Playbook, isAgent bool) error {
 
 func checkNoFuncFile(assertion Assertion) error {
 	for _, exec := range assertion.PreCmds {
+		if exec.ShellFuncFile != "" {
+			return fmt.Errorf("agent error: assertion %s contains shellFuncFile in preCmd", assertion.Code)
+		}
 		if exec.FuncFile != "" {
 			return fmt.Errorf("agent error: assertion %s contains funcFile in preCmd", assertion.Code)
 		}
 	}
 	for _, cmd := range assertion.Cmds {
+		if cmd.Exec.ShellFuncFile != "" {
+			return fmt.Errorf("agent error: assertion %s contains shellFuncFile in cmd", assertion.Code)
+		}
 		if cmd.Exec.FuncFile != "" {
 			return fmt.Errorf("agent error: assertion %s contains funcFile in cmd", assertion.Code)
 		}
@@ -50,6 +56,9 @@ func checkNoFuncFile(assertion Assertion) error {
 		}
 	}
 	for _, exec := range assertion.PostCmds {
+		if exec.ShellFuncFile != "" {
+			return fmt.Errorf("agent error: assertion %s contains shellFuncFile in postCmd", assertion.Code)
+		}
 		if exec.FuncFile != "" {
 			return fmt.Errorf("agent error: assertion %s contains funcFile in postCmd", assertion.Code)
 		}

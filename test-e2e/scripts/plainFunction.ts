@@ -1,1 +1,1 @@
-() => "echo 'hello from plain'"
+() => "console.log('hello from plain')"

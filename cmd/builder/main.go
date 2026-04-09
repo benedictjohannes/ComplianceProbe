@@ -135,6 +135,15 @@ func processAssertion(a *playbook.Assertion, baseDir string) {
 }
 
 func processExec(e *playbook.Exec, baseDir string) {
+	if e.ShellFuncFile != "" {
+		code, err := transpile.Transpile(filepath.Join(baseDir, e.ShellFuncFile))
+		if err != nil {
+			fmt.Printf("❌ Transpilation Error (%s): %v\n", e.ShellFuncFile, err)
+			os.Exit(1)
+		}
+		e.ShellFunc = code
+		e.ShellFuncFile = ""
+	}
 	if e.FuncFile != "" {
 		code, err := transpile.Transpile(filepath.Join(baseDir, e.FuncFile))
 		if err != nil {
