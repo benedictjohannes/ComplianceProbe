@@ -63,6 +63,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Transpile in-memory for direct run
+	for i := range config.Sections {
+		for j := range config.Sections[i].Assertions {
+			processAssertion(&config.Sections[i].Assertions[j], filepath.Dir(configPath))
+		}
+	}
+
 	result := report.GenerateReport(*config)
 	if err := reportwriter.DispatchReport(config, result); err != nil {
 		fmt.Printf("❌ Reporting Error: %v\n", err)
