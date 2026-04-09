@@ -2,7 +2,8 @@
 .vscode/
 
 reports/
-**playbook**
+playbook.*
+playbook-windows.yaml
 !playbook/
 !playbook.example.yaml
 !playbook.d.ts
