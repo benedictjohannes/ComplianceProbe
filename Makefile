@@ -57,6 +57,17 @@ test-coverage-report: ## Run go tests and generate HTML coverage report
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
+coverage-assets: ## Generate coverage.html and coverage.json for CI
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@PERCENTAGE=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}' | sed 's/%//'); \
+	COLOR="red"; \
+	IS_BRIGHTGREEN=$$(echo "$$PERCENTAGE" | awk '{print ($$1 > 80)}'); \
+	IS_YELLOW=$$(echo "$$PERCENTAGE" | awk '{print ($$1 > 50)}'); \
+	if [ "$$IS_BRIGHTGREEN" = "1" ]; then COLOR="brightgreen"; \
+	elif [ "$$IS_YELLOW" = "1" ]; then COLOR="yellow"; fi; \
+	echo "{\"schemaVersion\": 1, \"label\": \"coverage\", \"message\": \"$$PERCENTAGE%\", \"color\": \"$$COLOR\"}" > coverage.json
+
 test-builder: ## Verify builder transpilation and execution using built binaries
 	@echo "Verifying builder with built binaries..."
 	# 1. Preprocess raw playbook to baked version
