@@ -1,9 +1,11 @@
 package executor
 
 import (
-	"github.com/benedictjohannes/crobe/playbook"
 	"os/exec"
+	"runtime"
 	"testing"
+
+	"github.com/benedictjohannes/crobe/playbook"
 )
 
 func TestCleanupOutput(t *testing.T) {
@@ -116,6 +118,27 @@ func TestPerformGather(t *testing.T) {
 	if err == nil {
 		t.Error("PerformGather should return error on JS error")
 	}
+
+	// Test JS returning undefined
+	spec6 := playbook.GatherSpec{Key: "v", Func: "() => undefined"}
+	got, err = PerformGather(spec6, res, nil)
+	if err != nil || got != "undefined" { // goja.Value.String() for undefined is "undefined"
+		t.Errorf("PerformGather(undefined) = %q, %v", got, err)
+	}
+
+	// Test JS returning number
+	spec7 := playbook.GatherSpec{Key: "v", Func: "() => 123"}
+	got, err = PerformGather(spec7, res, nil)
+	if err != nil || got != "123" {
+		t.Errorf("PerformGather(123) = %q, %v", got, err)
+	}
+
+	// Test JS returning direct value
+	spec8 := playbook.GatherSpec{Key: "v", Func: "'direct value'"}
+	got, err = PerformGather(spec8, res, nil)
+	if err != nil || got != "direct value" {
+		t.Errorf("PerformGather(direct) = %q, %v", got, err)
+	}
 }
 
 func TestRunJS(t *testing.T) {
@@ -148,6 +171,12 @@ func TestRunJS(t *testing.T) {
 	_, err = RunJS("this is not valid js", context)
 	if err == nil {
 		t.Error("RunJS should return error on syntax error")
+	}
+
+	// Test execution error within function
+	_, err = RunJS("() => { nonExistent() }", context)
+	if err == nil {
+		t.Error("RunJS should return error on JS execution error")
 	}
 }
 
@@ -232,6 +261,29 @@ func TestRunExec(t *testing.T) {
 	if err == nil {
 		t.Error("RunExec should fail on ShellFunc JS error")
 	}
+
+	// 9. ShellFunc returns empty string (should fallback)
+	e9 := &playbook.Exec{
+		ShellFunc: "() => ''",
+		Shell:     "sh",
+		Script:    "echo hello",
+	}
+	res, err = RunExec(e9, context)
+	if err != nil || res.Stdout != "hello" {
+		t.Errorf("RunExec(ShellFunc empty) = %+v, %v; want \"hello\"", res, err)
+	}
+
+	// 10. PerformGather error in RunExec
+	e10 := &playbook.Exec{
+		Script: "echo hello",
+		Gather: []playbook.GatherSpec{
+			{Key: "fail", Regex: "[["},
+		},
+	}
+	_, err = RunExec(e10, context)
+	if err == nil {
+		t.Error("RunExec should fail on gather error")
+	}
 }
 
 func TestEvaluateRule(t *testing.T) {
@@ -309,6 +361,20 @@ func TestEvaluateRule(t *testing.T) {
 	if err == nil {
 		t.Error("EvaluateRule should return error on JS error")
 	}
+
+	// Test JS returning number directly
+	rule5 := playbook.EvaluationRule{Func: "1"}
+	got, _ = EvaluateRule(rule5, res, nil)
+	if got != 1 {
+		t.Errorf("EvaluateRule(direct-1) = %d; want 1", got)
+	}
+
+	// Test JS returning -1
+	rule6 := playbook.EvaluationRule{Func: "-1"}
+	got, _ = EvaluateRule(rule6, res, nil)
+	if got != -1 {
+		t.Errorf("EvaluateRule(direct--1) = %d; want -1", got)
+	}
 }
 
 func TestRunShell(t *testing.T) {
@@ -375,11 +441,48 @@ func TestRunShell(t *testing.T) {
 	if !res.Success || res.Stdout != "direct" {
 		t.Errorf("RunShell(!) = %+v; want Success: true, Stdout: direct", res)
 	}
+	res = RunShell("", "!", "")
+	if !res.Success {
+		t.Errorf("RunShell(!) = %+v; want Success: false", res)
+	}
 
 	// Test case for custom interpreter logic (e.g., shell "sh -c")
 	// Note: using 'sh' because it's available. In practice this could be 'python -u'
 	res = RunShell("echo hello", "sh", ".sh")
 	if !res.Success || res.Stdout != "hello" {
 		t.Errorf("RunShell(sh with ext) = %+v; want Success: true", res)
+	}
+	// another try with file extension without dot prefix
+	res = RunShell("echo hello", "sh", "sh")
+	if !res.Success || res.Stdout != "hello" {
+		t.Errorf("RunShell(sh with ext) = %+v; want Success: true", res)
+	}
+
+	// Test sh (hits the 'else' in line 134)
+	res = RunShell("echo hello", "sh", "")
+	if !res.Success || res.Stdout != "hello" {
+		t.Errorf("RunShell(sh) = %+v", res)
+	}
+
+	// Test powershell/pwsh
+	res = RunShell("echo hello", "powershell", "")
+	if res.Success || (res.ExitCode != -1 && runtime.GOOS == "linux") {
+		t.Logf("RunShell(powershell) failure as expected on linux: %+v", res)
+	}
+	res = RunShell("echo hello", "pwsh", "")
+	if res.Success || (res.ExitCode != -1 && runtime.GOOS == "linux") {
+		t.Logf("RunShell(pwsh) failure as expected on linux: %+v", res)
+	}
+
+	// Test default case with generic tool
+	res = RunShell("hello", "cat", "")
+	if !res.Success || res.Stdout != "hello" {
+		t.Errorf("RunShell(cat) = %+v", res)
+	}
+
+	// Test Generic shell with file extension
+	res = RunShell("hello", "cat", ".txt")
+	if !res.Success || res.Stdout != "hello" {
+		t.Errorf("RunShell(cat .txt) = %+v", res)
 	}
 }

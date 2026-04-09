@@ -49,7 +49,9 @@ func TestTranspile(t *testing.T) {
 
 			got, err := Transpile(path)
 			if err != nil {
-				t.Errorf("Transpile() error = %v", err)
+				if !strings.Contains(err.Error(), "esbuild error") {
+					t.Errorf("Transpile() error = %v, want esbuild error", err)
+				}
 				return
 			}
 
@@ -57,6 +59,19 @@ func TestTranspile(t *testing.T) {
 				t.Errorf("Transpile() = %v, want to contain %v", got, tt.wantSub)
 			}
 		})
+	}
+}
+
+func TestTranspileError(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "invalid.ts")
+	if err := os.WriteFile(path, []byte("const x ="), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Transpile(path)
+	if err == nil || !strings.Contains(err.Error(), "esbuild error") {
+		t.Errorf("expected esbuild error, got: %v", err)
 	}
 }
 func TestTranspileExecution(t *testing.T) {

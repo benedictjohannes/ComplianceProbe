@@ -13,7 +13,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var runExec executor.RunExecer
+var (
+	runExec executor.RunExecer
+	goos    = runtime.GOOS
+)
 
 func init() {
 	runExec = executor.RunExec
@@ -76,7 +79,7 @@ func GenerateReport(config playbook.Playbook) FinalResult {
 
 	md.WriteString(fmt.Sprintf("# %s\n\nGenerated on: %s\n\n---\n\n", config.Title, now.Format("2006-01-02 15:04:05")))
 
-	osName := runtime.GOOS
+	osName := goos
 	if osName == "darwin" {
 		osName = "mac"
 	}

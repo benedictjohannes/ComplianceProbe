@@ -53,11 +53,7 @@ test: ## Run go tests
 test-coverage: ## Run go tests with coverage
 	go test -cover ./...
 
-test-coverage-report: ## Run go tests and generate HTML coverage report
-	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out
-
-coverage-assets: ## Generate coverage.html and coverage.json for CI
+test-coverage-report: ## Generate coverage.html and coverage.json for CI
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 	@PERCENTAGE=$$(go tool cover -func=coverage.out | grep total | awk '{print $$3}' | sed 's/%//'); \

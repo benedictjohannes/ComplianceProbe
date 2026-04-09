@@ -8,4 +8,5 @@ playbook-windows.yaml
 !playbook.example.yaml
 !playbook.d.ts
 !playbook.schema.json
+coverage.*
 crobe*

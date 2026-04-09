@@ -47,6 +47,60 @@ func TestDispatchReport(t *testing.T) {
 		}
 	})
 
+	t.Run("folder destination using config", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "dispatch-config-folder-test-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		// Ensure DefaultReportsDir is empty to trigger the branch:
+		// if reportsDir == "" { reportsDir = config.ReportDestinationFolder }
+		oldDir := DefaultReportsDir
+		DefaultReportsDir = ""
+		defer func() { DefaultReportsDir = oldDir }()
+
+		config := &playbook.Playbook{
+			ReportDestination:       playbook.ReportDestinationFolder,
+			ReportDestinationFolder: tmpDir,
+		}
+		err = DispatchReport(config, res)
+		if err != nil {
+			t.Fatalf("DispatchReport to config folder failed: %v", err)
+		}
+
+		// Verify files exist in tmpDir
+		files, _ := os.ReadDir(tmpDir)
+		if len(files) != 3 {
+			t.Errorf("Expected 3 files in reports directory, got %d", len(files))
+		}
+	})
+
+	t.Run("default destination (empty)", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "dispatch-empty-dest-test-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		oldDir := DefaultReportsDir
+		DefaultReportsDir = tmpDir
+		defer func() { DefaultReportsDir = oldDir }()
+
+		config := &playbook.Playbook{
+			ReportDestination: "", // Should default to folder
+		}
+		err = DispatchReport(config, res)
+		if err != nil {
+			t.Fatalf("DispatchReport with empty destination failed: %v", err)
+		}
+
+		files, _ := os.ReadDir(tmpDir)
+		if len(files) != 3 {
+			t.Errorf("Expected 3 files, got %d", len(files))
+		}
+	})
+
 	t.Run("unknown destination", func(t *testing.T) {
 		config := &playbook.Playbook{
 			ReportDestination: "somewhere-else",
@@ -87,6 +141,26 @@ func TestDispatchReport(t *testing.T) {
 }
 
 func TestWriteToFolder(t *testing.T) {
+	t.Run("MkdirAll failure", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "mkdir-fail-test-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		// Create a directory that is searchable (x) but not writable (w)
+		unwritableDir := filepath.Join(tmpDir, "unwritable")
+		if err := os.Mkdir(unwritableDir, 0555); err != nil {
+			t.Fatal(err)
+		}
+
+		// Trying to create a subdirectory inside an unwritable parent will fail in MkdirAll
+		err = WriteToFolder(filepath.Join(unwritableDir, "reports"), report.FinalResult{})
+		if err == nil || !strings.Contains(err.Error(), "failed to create reports directory") {
+			t.Errorf("Expected MkdirAll failure, got %v", err)
+		}
+	})
+
 	tmpDir, err := os.MkdirTemp("", "reportwriter-write-test-*")
 	if err != nil {
 		t.Fatal(err)
@@ -135,6 +209,19 @@ func TestWriteToFolder(t *testing.T) {
 	if !foundLog || !foundMD || !foundJSON {
 		t.Errorf("Missing report files: log=%v, md=%v, json=%v", foundLog, foundMD, foundJSON)
 	}
+
+	t.Run("default reports directory", func(t *testing.T) {
+		// This will create a "reports" folder in the current directory.
+		err := WriteToFolder("", res)
+		if err != nil {
+			t.Fatalf("WriteToFolder with default dir failed: %v", err)
+		}
+		defer os.RemoveAll("reports")
+
+		if _, err := os.Stat("reports"); os.IsNotExist(err) {
+			t.Errorf("Expected 'reports' directory to be created, but it's missing")
+		}
+	})
 }
 
 func TestWriteToFolder_Errors(t *testing.T) {

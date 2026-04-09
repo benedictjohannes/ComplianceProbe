@@ -49,7 +49,7 @@ jobs:
         run: make schema
 
       - name: Generate Coverage Assets
-        run: make coverage-assets
+        run: make test-coverage-report
 
       - name: Deploy Coverage to Branch
         if: github.ref == 'refs/heads/master'

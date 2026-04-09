@@ -388,3 +388,111 @@ func TestIsEvidenceMaterial(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateReport_CoverageBoost(t *testing.T) {
+	// 1. Mock GOOS to darwin to cover line 81
+	oldOS := goos
+	goos = "darwin"
+	defer func() { goos = oldOS }()
+
+	// 2. config with nil ReportFrontmatter
+	config := playbook.Playbook{
+		Title: "Boost Test",
+		Sections: []playbook.Section{
+			{
+				Title: "S1",
+				Assertions: []playbook.Assertion{
+					{
+						Code: "B_01",
+						PreCmds: []playbook.Exec{
+							{
+								Script: "pre-gather",
+								Gather: []playbook.GatherSpec{
+									{Key: "pre_secret", Regex: "(.*)", ExcludeFromReport: true},
+								},
+							},
+						},
+						Cmds: []playbook.Cmd{
+							{
+								Exec: playbook.Exec{Script: "cmd-mixed"},
+								StdErrRule: playbook.EvaluationRule{Regex: "ERROR_MATCH"},
+							},
+							{
+								Exec: playbook.Exec{Script: "cmd-stderr-only"},
+							},
+						},
+						PostCmds: []playbook.Exec{
+							{
+								Script: "post-gather",
+								Gather: []playbook.GatherSpec{
+									{Key: "post_secret", Regex: "(.*)", ExcludeFromReport: true},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+		if e.Script == "pre-gather" {
+			context["pre_secret"] = "pre-secret-val"
+			return executor.ExecutionResult{Success: true}, nil
+		}
+		if e.Script == "cmd-mixed" {
+			return executor.ExecutionResult{
+				Stdout:   "some stdout",
+				Stderr:   "ERROR_MATCH",
+				ExitCode: 0,
+				Success:  true,
+			}, nil
+		}
+		if e.Script == "cmd-stderr-only" {
+			return executor.ExecutionResult{
+				Stdout:   "",
+				Stderr:   "just stderr",
+				ExitCode: 0,
+				Success:  true,
+			}, nil
+		}
+		if e.Script == "post-gather" {
+			context["post_secret"] = "secret-val"
+			return executor.ExecutionResult{Success: true}, nil
+		}
+		return executor.ExecutionResult{Success: true}, nil
+	}
+
+	runExec = mockExec
+	res := GenerateReport(config)
+
+	// Check OS
+	if res.Structured.OS != "mac" {
+		t.Errorf("OS = %s; want mac", res.Structured.OS)
+	}
+
+	// Check mixed output in Markdown
+	if !strings.Contains(res.Markdown, "# --- STDOUT ---") {
+		t.Errorf("Markdown missing STDOUT header for mixed output")
+	}
+	if !strings.Contains(res.Markdown, "# --- STDERR ---") {
+		t.Errorf("Markdown missing STDERR header for mixed output")
+	}
+
+	// Check stderr-only output: should NOT have STDOUT header
+	// (This is a bit tricky to check with strings.Contains, but we can try)
+	// Actually, we just care that it doesn't crash and hits the branch.
+
+	// Check gather exclusions
+	if _, exists := res.Structured.Assertions["B_01"].Context["pre_secret"]; exists {
+		t.Errorf("pre_secret should be excluded from report context")
+	}
+	if _, exists := res.Structured.Assertions["B_01"].Context["post_secret"]; exists {
+		t.Errorf("post_secret should be excluded from report context")
+	}
+
+	// Check default frontmatter (title and date)
+	if !strings.Contains(res.Markdown, "title: Boost Test") {
+		t.Errorf("Markdown missing default title in frontmatter")
+	}
+}
