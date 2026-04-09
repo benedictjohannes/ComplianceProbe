@@ -1,0 +1,1902 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>builder: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/benedictjohannes/crobe/cmd/builder/main.go (90.4%)</option>
+				
+				<option value="file1">github.com/benedictjohannes/crobe/cmd/probe/main.go (96.4%)</option>
+				
+				<option value="file2">github.com/benedictjohannes/crobe/director/director.go (98.1%)</option>
+				
+				<option value="file3">github.com/benedictjohannes/crobe/executor/executor.go (95.0%)</option>
+				
+				<option value="file4">github.com/benedictjohannes/crobe/internal/configsource/configsource.go (100.0%)</option>
+				
+				<option value="file5">github.com/benedictjohannes/crobe/internal/headerflags/headerflags.go (100.0%)</option>
+				
+				<option value="file6">github.com/benedictjohannes/crobe/internal/reportwriter/folderWriter.go (88.5%)</option>
+				
+				<option value="file7">github.com/benedictjohannes/crobe/internal/reportwriter/httpWriter.go (90.8%)</option>
+				
+				<option value="file8">github.com/benedictjohannes/crobe/internal/reportwriter/writer.go (100.0%)</option>
+				
+				<option value="file9">github.com/benedictjohannes/crobe/internal/transpile/preprocess.go (98.4%)</option>
+				
+				<option value="file10">github.com/benedictjohannes/crobe/internal/transpile/transpile.go (100.0%)</option>
+				
+				<option value="file11">github.com/benedictjohannes/crobe/playbook/playbook_types.go (100.0%)</option>
+				
+				<option value="file12">github.com/benedictjohannes/crobe/playbook/schema.go (83.3%)</option>
+				
+				<option value="file13">github.com/benedictjohannes/crobe/playbook/validator.go (100.0%)</option>
+				
+				<option value="file14">github.com/benedictjohannes/crobe/report/report.go (95.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "flag"
+        "fmt"
+        "os"
+        "path/filepath"
+
+        "github.com/benedictjohannes/crobe/director"
+        "github.com/benedictjohannes/crobe/internal/configsource"
+        "github.com/benedictjohannes/crobe/internal/headerflags"
+        "github.com/benedictjohannes/crobe/internal/reportwriter"
+        "github.com/benedictjohannes/crobe/internal/transpile"
+        "github.com/benedictjohannes/crobe/playbook"
+        "github.com/benedictjohannes/crobe/report"
+)
+
+func main() <span class="cov0" title="0">{
+        os.Exit(run(os.Args[1:]))
+}</span>
+
+func run(args []string) int <span class="cov8" title="1">{
+        flags := flag.NewFlagSet("crobe-builder", flag.ContinueOnError)
+        schemaFlag := flags.Bool("schema", false, "Output the configuration JSON schema and exit")
+        preprocessFlag := flags.Bool("preprocess", false, "Preprocess a raw YAML into a baked playbook")
+        inputFlag := flags.String("input", "", "Input raw YAML file (for preprocess)")
+        outputFlag := flags.String("output", "playbook.yaml", "Output baked YAML file (for preprocess)")
+        folderFlag := flags.String("folder", "", "Folder to write reports to (default \"reports\")")
+        var headersFlags headerflags.HeaderFlags
+        flags.Var(&amp;headersFlags, "H", "Custom header for remote playbook fetching (eg: 'Authorization: Bearer &lt;TOKEN&gt;'). Specify multiple times for each header you want to add.")
+
+        if err := flags.Parse(args); err != nil </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">headers := headersFlags.ToMap()
+        reportwriter.DefaultReportsDir = *folderFlag
+
+        if *schemaFlag </span><span class="cov8" title="1">{
+                schema, err := playbook.GenerateSchema()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Printf("❌ Failed to generate schema: %v\n", err)
+                        return 1
+                }</span>
+                <span class="cov8" title="1">fmt.Println(schema)
+                return 0</span>
+        }
+
+        <span class="cov8" title="1">if *preprocessFlag </span><span class="cov8" title="1">{
+                if *inputFlag == "" </span><span class="cov8" title="1">{
+                        fmt.Println("❌ Error: --input is required for --preprocess")
+                        return 1
+                }</span>
+                <span class="cov8" title="1">return runPreprocess(*inputFlag, *outputFlag)</span>
+        }
+
+        // Default: Run Agent Report
+        <span class="cov8" title="1">configPath := flags.Arg(0)
+        if configPath == "" </span><span class="cov8" title="1">{
+                fmt.Println("❌ Error: No playbook provided. Use 'crobe [path/to/playbook.yaml]'")
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">config, _, err := configsource.LoadConfig(configPath, headers)
+        if err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Failed to load playbook %s: %v\n", configPath, err)
+                return 1
+        }</span>
+
+        // Validate (builder allows funcFile)
+        <span class="cov8" title="1">if err := playbook.ValidateConfig(*config, false); err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("❌ Validation Error: %v\n", err)
+                return 1
+        }</span>
+
+        // Transpile in-memory for direct run
+        <span class="cov8" title="1">if err := transpile.Preprocess(config, filepath.Dir(configPath)); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Preprocessing Error: %v\n", err)
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">trace := director.Run(*config)
+        result := report.GenerateReport(trace)
+        if err := reportwriter.DispatchReport(config, result); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Reporting Error: %v\n", err)
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">if result.Structured.Stats.Failed &gt; 0 </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">return 0</span>
+}
+func runPreprocess(inputPath string, outputPath string) int <span class="cov8" title="1">{
+        if err := transpile.BakeFile(inputPath, outputPath); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Preprocessing Failed: %v\n", err)
+                return 1
+        }</span>
+        <span class="cov8" title="1">fmt.Printf("🚀 Preprocessing Complete! Baked playbook saved to: %s\n", outputPath)
+        return 0</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "flag"
+        "fmt"
+        "os"
+
+        "github.com/benedictjohannes/crobe/director"
+        "github.com/benedictjohannes/crobe/internal/configsource"
+        "github.com/benedictjohannes/crobe/internal/headerflags"
+        "github.com/benedictjohannes/crobe/internal/reportwriter"
+        "github.com/benedictjohannes/crobe/playbook"
+        "github.com/benedictjohannes/crobe/report"
+)
+
+func main() <span class="cov0" title="0">{
+        os.Exit(run(os.Args[1:]))
+}</span>
+
+func run(args []string) int <span class="cov8" title="1">{
+        flags := flag.NewFlagSet("crobe", flag.ContinueOnError)
+        folderFlag := flags.String("folder", "", "Folder to write reports to (default \"reports\")")
+        var headersFlags headerflags.HeaderFlags
+        flags.Var(&amp;headersFlags, "H", "Custom header for remote playbook fetching (eg: 'Authorization: Bearer &lt;TOKEN&gt;'). Specify multiple times for each header you want to add.")
+
+        if err := flags.Parse(args); err != nil </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">headers := headersFlags.ToMap()
+
+        reportwriter.DefaultReportsDir = *folderFlag
+
+        configPath := flags.Arg(0)
+        if configPath == "" </span><span class="cov8" title="1">{
+                fmt.Println("❌ Error: No playbook provided. Use 'crobe [path/to/playbook.yaml]'")
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">config, _, err := configsource.LoadConfig(configPath, headers)
+        if err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Failed to load playbook %s: %v\n", configPath, err)
+                return 1
+        }</span>
+
+        // TODO this line to below are not covered by tests
+
+        // Validate as Agent
+        <span class="cov8" title="1">if err := playbook.ValidateConfig(*config, true); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Validation Error: %v\n", err)
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">trace := director.Run(*config)
+        result := report.GenerateReport(trace)
+        if err := reportwriter.DispatchReport(config, result); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("❌ Reporting Error: %v\n", err)
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">if result.Structured.Stats.Failed &gt; 0 </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">return 0</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package director
+
+import (
+        "fmt"
+        "os"
+        "runtime"
+        "time"
+
+        "github.com/benedictjohannes/crobe/executor"
+        "github.com/benedictjohannes/crobe/playbook"
+)
+
+var (
+        runExec = executor.RunExec
+        goos    = runtime.GOOS
+)
+
+func Run(config playbook.Playbook) executor.ExecutionTrace <span class="cov8" title="1">{
+        now := time.Now()
+
+        osName := goos
+        if osName == "darwin" </span><span class="cov8" title="1">{
+                osName = "mac"
+        }</span>
+
+        <span class="cov8" title="1">username := os.Getenv("USER")
+        if username == "" </span><span class="cov8" title="1">{
+                username = os.Getenv("USERNAME")
+        }</span>
+
+        <span class="cov8" title="1">trace := executor.ExecutionTrace{
+                Playbook: config,
+                Username: username,
+                OS:       osName,
+                Arch:     runtime.GOARCH,
+        }
+        trace.Timestamps.Start = now
+
+        totalPassed := 0
+        totalFailed := 0
+
+        for _, section := range config.Sections </span><span class="cov8" title="1">{
+                fmt.Printf("  Processing Section: %s\n", section.Title)
+                sectionCtx := executor.SectionContext{
+                        PlaybookSection: section,
+                }
+
+                for _, assertion := range section.Assertions </span><span class="cov8" title="1">{
+                        start := time.Now()
+                        context := make(map[string]interface{})
+                        score := 0
+
+                        assCtx := executor.AssertionContext{
+                                PlaybookAssertion: assertion,
+                                Context:           make(map[string]interface{}),
+                        }
+
+                        // 1. Pre-Commands
+                        for _, exec := range assertion.PreCmds </span><span class="cov8" title="1">{
+                                res, err := runExec(&amp;exec, context)
+                                assCtx.PreCmdLogs = append(assCtx.PreCmdLogs, executor.CommandLog{
+                                        Exec:   exec,
+                                        Result: res,
+                                        Err:    err,
+                                })
+                                if err != nil </span><span class="cov8" title="1">{
+                                        fmt.Printf("      ⚠️ PreCmd Error (%s): %v\n", assertion.Code, err)
+                                }</span>
+                        }
+
+                        // 2. Main Commands
+                        <span class="cov8" title="1">var outputs []string
+                        for _, cmd := range assertion.Cmds </span><span class="cov8" title="1">{
+                                res, err := runExec(&amp;cmd.Exec, context)
+                                assCtx.CmdLogs = append(assCtx.CmdLogs, executor.CommandLog{
+                                        Exec:   cmd.Exec,
+                                        Result: res,
+                                        Err:    err,
+                                })
+
+                                if err != nil </span><span class="cov8" title="1">{
+                                        score += cmd.GetFailScore()
+                                        continue</span>
+                                }
+
+                                <span class="cov8" title="1">if cmd.Exec.ExcludeFromReport </span><span class="cov8" title="1">{
+                                        outputs = append(outputs, "[REDACTED]")
+                                }</span> else<span class="cov8" title="1"> {
+                                        if res.Stderr != "" </span><span class="cov8" title="1">{
+                                                if len(res.Stdout) &gt; 0 </span><span class="cov8" title="1">{
+                                                        outputs = append(outputs, "# --- STDOUT ---")
+                                                        outputs = append(outputs, res.Stdout)
+                                                }</span>
+                                                <span class="cov8" title="1">outputs = append(outputs, "# --- STDERR ---")
+                                                outputs = append(outputs, res.Stderr)</span>
+                                        } else<span class="cov8" title="1"> {
+                                                outputs = append(outputs, res.Stdout)
+                                        }</span>
+                                }
+
+                                // Evaluation
+                                <span class="cov8" title="1">result := 0
+                                foundRule := false
+                                for _, rule := range cmd.ExitCodeRules </span><span class="cov8" title="1">{
+                                        match := true
+                                        if rule.Min != nil &amp;&amp; res.ExitCode &lt; *rule.Min </span><span class="cov0" title="0">{
+                                                match = false
+                                        }</span>
+                                        <span class="cov8" title="1">if rule.Max != nil &amp;&amp; res.ExitCode &gt; *rule.Max </span><span class="cov0" title="0">{
+                                                match = false
+                                        }</span>
+                                        <span class="cov8" title="1">if match </span><span class="cov8" title="1">{
+                                                result = rule.Result
+                                                foundRule = true
+                                                break</span>
+                                        }
+                                }
+
+                                <span class="cov8" title="1">if !foundRule </span><span class="cov8" title="1">{
+                                        if res.ExitCode == 0 </span><span class="cov8" title="1">{
+                                                result = 1
+                                        }</span> else<span class="cov8" title="1"> {
+                                                result = -1
+                                        }</span>
+                                }
+
+                                <span class="cov8" title="1">if cmd.StdOutRule.Regex != "" || cmd.StdOutRule.Func != "" </span><span class="cov8" title="1">{
+                                        verdict, _ := executor.EvaluateRule(cmd.StdOutRule, res, context)
+                                        if verdict != 0 </span><span class="cov8" title="1">{
+                                                result = verdict
+                                        }</span>
+                                }
+                                <span class="cov8" title="1">if cmd.StdErrRule.Regex != "" || cmd.StdErrRule.Func != "" </span><span class="cov8" title="1">{
+                                        verdict, _ := executor.EvaluateRule(cmd.StdErrRule, res, context)
+                                        if verdict != 0 </span><span class="cov8" title="1">{
+                                                result = verdict
+                                        }</span>
+                                }
+
+                                <span class="cov8" title="1">switch result </span>{
+                                case 1:<span class="cov8" title="1">
+                                        score += cmd.GetPassScore()</span>
+                                case -1:<span class="cov8" title="1">
+                                        score += cmd.GetFailScore()</span>
+                                }
+                        }
+                        <span class="cov8" title="1">assCtx.Outputs = outputs
+
+                        // 3. Post-Commands
+                        for _, exec := range assertion.PostCmds </span><span class="cov8" title="1">{
+                                res, err := runExec(&amp;exec, context)
+                                assCtx.PostCmdLogs = append(assCtx.PostCmdLogs, executor.CommandLog{
+                                        Exec:   exec,
+                                        Result: res,
+                                        Err:    err,
+                                })
+                                if err != nil </span><span class="cov8" title="1">{
+                                        fmt.Printf("      ⚠️ PostCmd Error (%s): %v\n", assertion.Code, err)
+                                }</span>
+                        }
+
+                        <span class="cov8" title="1">passed := score &gt;= assertion.GetMinPassingScore()
+                        if passed </span><span class="cov8" title="1">{
+                                totalPassed++
+                        }</span> else<span class="cov8" title="1"> {
+                                totalFailed++
+                        }</span>
+
+                        <span class="cov8" title="1">assCtx.Passed = passed
+                        assCtx.Score = score
+                        assCtx.MinScore = assertion.GetMinPassingScore()
+                        assCtx.Timestamps.Start = start
+                        assCtx.Timestamps.End = time.Now()
+
+                        // Determine which keys to exclude from report
+                        excludedKeys := make(map[string]bool)
+                        for _, exec := range assertion.PreCmds </span><span class="cov8" title="1">{
+                                for _, g := range exec.Gather </span><span class="cov8" title="1">{
+                                        if g.ExcludeFromReport </span><span class="cov8" title="1">{
+                                                excludedKeys[g.Key] = true
+                                        }</span>
+                                }
+                        }
+                        <span class="cov8" title="1">for _, cmd := range assertion.Cmds </span><span class="cov8" title="1">{
+                                for _, g := range cmd.Exec.Gather </span><span class="cov8" title="1">{
+                                        if g.ExcludeFromReport </span><span class="cov8" title="1">{
+                                                excludedKeys[g.Key] = true
+                                        }</span>
+                                }
+                        }
+                        <span class="cov8" title="1">for _, exec := range assertion.PostCmds </span><span class="cov8" title="1">{
+                                for _, g := range exec.Gather </span><span class="cov8" title="1">{
+                                        if g.ExcludeFromReport </span><span class="cov8" title="1">{
+                                                excludedKeys[g.Key] = true
+                                        }</span>
+                                }
+                        }
+
+                        <span class="cov8" title="1">for k, v := range context </span><span class="cov8" title="1">{
+                                if !excludedKeys[k] </span><span class="cov8" title="1">{
+                                        assCtx.Context[k] = v
+                                }</span>
+                        }
+
+                        <span class="cov8" title="1">status := "✅ PASS"
+                        if !passed </span><span class="cov8" title="1">{
+                                status = "❌ FAIL"
+                        }</span>
+                        <span class="cov8" title="1">fmt.Printf("    - %s: %s (Score: %d/%d)\n", assertion.Title, status, score, assertion.GetMinPassingScore())
+
+                        sectionCtx.Assertions = append(sectionCtx.Assertions, assCtx)</span>
+                }
+                <span class="cov8" title="1">trace.Sections = append(trace.Sections, sectionCtx)</span>
+        }
+
+        <span class="cov8" title="1">trace.Timestamps.End = time.Now()
+        trace.TotalPassed = totalPassed
+        trace.TotalFailed = totalFailed
+
+        return trace</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package executor
+
+import (
+        "bytes"
+        "fmt"
+        "os"
+        "os/exec"
+        "path/filepath"
+        "regexp"
+        "runtime"
+        "strings"
+        "time"
+
+        "github.com/benedictjohannes/crobe/playbook"
+
+        "github.com/acarl005/stripansi"
+        "github.com/dop251/goja"
+)
+
+type RunExecer func(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error)
+
+type ExecutionResult struct {
+        Stdout   string
+        Stderr   string
+        ExitCode int
+        Success  bool
+}
+
+func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error) <span class="cov8" title="1">{
+        script := e.Script
+
+        // If Func is provided, it wins and generates the script
+        if e.Func != "" </span><span class="cov8" title="1">{
+                jsScript, err := RunJS(e.Func, context)
+                if err != nil </span><span class="cov8" title="1">{
+                        return ExecutionResult{}, fmt.Errorf("JS error in Exec.Func: %v", err)
+                }</span>
+                <span class="cov8" title="1">if jsScript == "" </span><span class="cov8" title="1">{
+                        return ExecutionResult{Success: true}, nil // Skip execution if JS returns empty
+                }</span>
+                <span class="cov8" title="1">script = jsScript</span>
+        }
+        <span class="cov8" title="1">e.Script = script
+
+        if script == "" </span><span class="cov8" title="1">{
+                return ExecutionResult{Success: true}, nil
+        }</span>
+
+        <span class="cov8" title="1">shell := e.Shell
+        if e.ShellFunc != "" </span><span class="cov8" title="1">{
+                jsShell, err := RunJS(e.ShellFunc, context)
+                if err != nil </span><span class="cov8" title="1">{
+                        return ExecutionResult{}, fmt.Errorf("JS error in Exec.ShellFunc: %v", err)
+                }</span>
+                <span class="cov8" title="1">if jsShell != "" </span><span class="cov8" title="1">{
+                        shell = jsShell
+                }</span>
+        }
+
+        <span class="cov8" title="1">res := RunShell(script, shell, e.ScriptFileExtension)
+
+        // Handle Gathering
+        for _, g := range e.Gather </span><span class="cov8" title="1">{
+                val, err := PerformGather(g, res, context)
+                if err != nil </span><span class="cov8" title="1">{
+                        return res, fmt.Errorf("gather error for key %s: %v", g.Key, err)
+                }</span>
+                <span class="cov8" title="1">context[g.Key] = val</span>
+        }
+
+        <span class="cov8" title="1">return res, nil</span>
+}
+
+func RunShell(command string, shell string, extension string) ExecutionResult <span class="cov8" title="1">{
+        var name string
+        var args []string
+
+        tmpDir := os.TempDir()
+        var tmpFile string
+
+        if shell == "" </span><span class="cov8" title="1">{
+                switch runtime.GOOS </span>{
+                case "windows":<span class="cov0" title="0">
+                        if _, err := exec.LookPath("pwsh"); err == nil </span><span class="cov0" title="0">{
+                                shell = "pwsh"
+                        }</span> else<span class="cov0" title="0"> {
+                                shell = "powershell"
+                        }</span>
+                case "darwin":<span class="cov0" title="0">
+                        shell = "zsh"</span>
+                default:<span class="cov8" title="1">
+                        shell = "bash"</span>
+                }
+        }
+
+        <span class="cov8" title="1">if extension != "" &amp;&amp; !strings.HasPrefix(extension, ".") </span><span class="cov8" title="1">{
+                extension = "." + extension
+        }</span>
+
+        <span class="cov8" title="1">switch shell </span>{
+        case "!":<span class="cov8" title="1">
+                // Direct execution: command is treated as name + args
+                segments := strings.Fields(command)
+                if len(segments) == 0 </span><span class="cov8" title="1">{
+                        return ExecutionResult{Success: true}
+                }</span>
+                <span class="cov8" title="1">name = segments[0]
+                args = segments[1:]</span>
+        case "powershell", "pwsh":<span class="cov8" title="1">
+                name = shell
+                ext := ".ps1"
+                if extension != "" </span><span class="cov0" title="0">{
+                        ext = extension
+                }</span>
+                <span class="cov8" title="1">tmpFile = filepath.Join(tmpDir, fmt.Sprintf("cp_%d%s", time.Now().UnixNano(), ext))
+                script := fmt.Sprintf("$ErrorActionPreference = 'Stop'\n%s\n", command)
+                os.WriteFile(tmpFile, []byte(script), 0644)
+                args = []string{"-ExecutionPolicy", "Bypass", "-File", tmpFile}</span>
+        case "bash", "sh", "zsh":<span class="cov8" title="1">
+                name = shell
+                base := filepath.Base(shell)
+                
+                ext := ".sh"
+                if extension != "" </span><span class="cov8" title="1">{
+                        ext = extension
+                }</span> else<span class="cov8" title="1"> if base == "zsh" </span><span class="cov8" title="1">{
+                        ext = ".zsh"
+                }</span>
+                
+                <span class="cov8" title="1">tmpFile = filepath.Join(tmpDir, fmt.Sprintf("cp_%d%s", time.Now().UnixNano(), ext))
+                var script string
+                if base == "bash" || base == "zsh" </span><span class="cov8" title="1">{
+                        script = fmt.Sprintf("set -o pipefail\n%s\n", command)
+                }</span> else<span class="cov8" title="1"> {
+                        script = fmt.Sprintf("%s\n", command)
+                }</span>
+                <span class="cov8" title="1">os.WriteFile(tmpFile, []byte(script), 0755)
+                args = []string{tmpFile}</span>
+        default:<span class="cov8" title="1">
+                // Generic shell/interpreter: shell string is split into command + initial args,
+                // and the script is appended as a temporary file.
+                shellSegments := strings.Fields(shell)
+                name = shellSegments[0]
+                tmpFile = filepath.Join(tmpDir, fmt.Sprintf("cp_%d%s", time.Now().UnixNano(), extension))
+                os.WriteFile(tmpFile, []byte(command), 0755)
+
+                args = append(shellSegments[1:], tmpFile)</span>
+        }
+
+        <span class="cov8" title="1">if tmpFile != "" </span><span class="cov8" title="1">{
+                defer os.Remove(tmpFile)
+        }</span>
+
+        <span class="cov8" title="1">cmd := exec.Command(name, args...)
+        cmd.Env = append(os.Environ(), "TERM=dumb", "NO_COLOR=1", "LANG=en_US.UTF-8")
+
+        var stdout, stderr bytes.Buffer
+        cmd.Stdout = &amp;stdout
+        cmd.Stderr = &amp;stderr
+
+        err := cmd.Run()
+        exitCode := 0
+        if err != nil </span><span class="cov8" title="1">{
+                if exitError, ok := err.(*exec.ExitError); ok </span><span class="cov8" title="1">{
+                        exitCode = exitError.ExitCode()
+                }</span> else<span class="cov8" title="1"> {
+                        exitCode = -1
+                }</span>
+        }
+
+        <span class="cov8" title="1">return ExecutionResult{
+                Stdout:   CleanupOutput(stdout.String()),
+                Stderr:   CleanupOutput(stderr.String()),
+                ExitCode: exitCode,
+                Success:  err == nil,
+        }</span>
+}
+
+func RunJS(code string, context map[string]interface{}) (string, error) <span class="cov8" title="1">{
+        vm := goja.New()
+
+        // Inject Context
+        vm.Set("assertionContext", context)
+
+        osName := runtime.GOOS
+        if osName == "darwin" </span><span class="cov0" title="0">{
+                osName = "mac"
+        }</span>
+        <span class="cov8" title="1">vm.Set("os", osName)
+        vm.Set("arch", runtime.GOARCH)
+
+        // Inject Env
+        envMap := make(map[string]string)
+        for _, e := range os.Environ() </span><span class="cov8" title="1">{
+                pair := strings.SplitN(e, "=", 2)
+                if len(pair) == 2 </span><span class="cov8" title="1">{
+                        envMap[pair[0]] = pair[1]
+                }</span>
+        }
+        <span class="cov8" title="1">vm.Set("env", envMap)
+
+        // Inject User/CWD
+        user := os.Getenv("USER")
+        if user == "" </span><span class="cov0" title="0">{
+                user = os.Getenv("USERNAME")
+        }</span>
+        <span class="cov8" title="1">vm.Set("user", user)
+        cwd, _ := os.Getwd()
+        vm.Set("cwd", cwd)
+
+        // Run code
+        val, err := vm.RunString(code)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", err
+        }</span>
+
+        // Signature: ({ assertionContext, env, os, arch, user, cwd }) =&gt; string
+        <span class="cov8" title="1">if fn, ok := goja.AssertFunction(val); ok </span><span class="cov8" title="1">{
+                params := vm.NewObject()
+                params.Set("assertionContext", context)
+                params.Set("env", envMap)
+                params.Set("os", osName)
+                params.Set("arch", runtime.GOARCH)
+                params.Set("user", user)
+                params.Set("cwd", cwd)
+
+                res, err := fn(goja.Undefined(), params)
+                if err != nil </span><span class="cov8" title="1">{
+                        return "", err
+                }</span>
+                <span class="cov8" title="1">return res.String(), nil</span>
+        }
+
+        <span class="cov8" title="1">if goja.IsUndefined(val) || goja.IsNull(val) </span><span class="cov8" title="1">{
+                return "", nil
+        }</span>
+
+        <span class="cov8" title="1">return val.String(), nil</span>
+}
+
+func PerformGather(g playbook.GatherSpec, res ExecutionResult, context map[string]interface{}) (string, error) <span class="cov8" title="1">{
+        input := res.Stdout
+        if g.GetIncludeStdErr() &amp;&amp; input == "" </span><span class="cov8" title="1">{
+                input = res.Stderr
+        }</span>
+
+        // JS Function wins
+        <span class="cov8" title="1">if g.Func != "" </span><span class="cov8" title="1">{
+                vm := goja.New()
+                vm.Set("stdout", res.Stdout)
+                vm.Set("stderr", res.Stderr)
+                vm.Set("assertionContext", context)
+
+                val, err := vm.RunString(g.Func)
+                if err != nil </span><span class="cov0" title="0">{
+                        return "", err
+                }</span>
+
+                <span class="cov8" title="1">if fn, ok := goja.AssertFunction(val); ok </span><span class="cov8" title="1">{
+                        // Signature: (stdout, stderr, assertionContext) =&gt; string
+                        res, err := fn(goja.Undefined(), vm.ToValue(res.Stdout), vm.ToValue(res.Stderr), vm.ToValue(context))
+                        if err != nil </span><span class="cov8" title="1">{
+                                return "", err
+                        }</span>
+                        <span class="cov8" title="1">return res.String(), nil</span>
+                }
+
+                <span class="cov8" title="1">return val.String(), nil</span>
+        }
+
+        // Regex
+        <span class="cov8" title="1">if g.Regex != "" </span><span class="cov8" title="1">{
+                re, err := regexp.Compile(g.Regex)
+                if err != nil </span><span class="cov8" title="1">{
+                        return "", err
+                }</span>
+                <span class="cov8" title="1">matches := re.FindStringSubmatch(input)
+                if len(matches) &gt; 1 </span><span class="cov8" title="1">{
+                        return matches[1], nil
+                }</span> else<span class="cov8" title="1"> if len(matches) == 1 </span><span class="cov8" title="1">{
+                        return matches[0], nil
+                }</span>
+        }
+
+        <span class="cov8" title="1">return "", nil</span>
+}
+
+func EvaluateRule(rule playbook.EvaluationRule, res ExecutionResult, context map[string]interface{}) (int, error) <span class="cov8" title="1">{
+        input := res.Stdout
+        if rule.GetIncludeStdErr() &amp;&amp; input == "" </span><span class="cov8" title="1">{
+                input = res.Stderr
+        }</span>
+
+        <span class="cov8" title="1">if rule.Func != "" </span><span class="cov8" title="1">{
+                vm := goja.New()
+                vm.Set("stdout", res.Stdout)
+                vm.Set("stderr", res.Stderr)
+                vm.Set("assertionContext", context)
+
+                val, err := vm.RunString(rule.Func)
+                if err != nil </span><span class="cov0" title="0">{
+                        return 0, err
+                }</span>
+
+                <span class="cov8" title="1">if fn, ok := goja.AssertFunction(val); ok </span><span class="cov8" title="1">{
+                        // Signature: (stdout, stderr, assertionContext) =&gt; -1 | 0 | 1
+                        out, err := fn(goja.Undefined(), vm.ToValue(res.Stdout), vm.ToValue(res.Stderr), vm.ToValue(context))
+                        if err != nil </span><span class="cov8" title="1">{
+                                return 0, err
+                        }</span>
+                        <span class="cov8" title="1">return int(out.ToInteger()), nil</span>
+                }
+
+                <span class="cov8" title="1">return int(val.ToInteger()), nil</span>
+        }
+
+        <span class="cov8" title="1">if rule.Regex != "" </span><span class="cov8" title="1">{
+                re, err := regexp.Compile(rule.Regex)
+                if err != nil </span><span class="cov8" title="1">{
+                        return 0, err
+                }</span>
+                <span class="cov8" title="1">if re.MatchString(input) </span><span class="cov8" title="1">{
+                        return 1, nil
+                }</span>
+                <span class="cov8" title="1">return -1, nil</span>
+        }
+
+        <span class="cov8" title="1">return 0, nil</span>
+}
+
+func CleanupOutput(input string) string <span class="cov8" title="1">{
+        // 1. Use stripansi to handle cross-platform ANSI/CSI/OSC sequences robustly
+        output := stripansi.Strip(input)
+
+        // 2. Explicitly remove BEL and other non-printable control chars
+        output = strings.Map(func(r rune) rune </span><span class="cov8" title="1">{
+                if r == '\u0007' || (r &lt; 32 &amp;&amp; r != '\n' &amp;&amp; r != '\r' &amp;&amp; r != '\t') </span><span class="cov8" title="1">{
+                        return -1 // Drop the character
+                }</span>
+                <span class="cov8" title="1">return r</span>
+        }, output)
+
+        <span class="cov8" title="1">return strings.TrimSpace(output)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package configsource
+
+import (
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+        "os"
+        "strings"
+        "time"
+
+        "github.com/benedictjohannes/crobe/playbook"
+
+        "gopkg.in/yaml.v3"
+)
+
+// LoadConfig loads the playbook from either a local file or an HTTPS URL.
+func LoadConfig(path string, headers map[string]string) (*playbook.Playbook, []byte, error) <span class="cov8" title="1">{
+        var data []byte
+        var contentType string
+        var err error
+
+        if strings.HasPrefix(path, "http://") </span><span class="cov8" title="1">{
+                return nil, nil, fmt.Errorf("insecure HTTP connections are not allowed: %s", path)
+        }</span>
+        <span class="cov8" title="1">isHttps := strings.HasPrefix(path, "https://")
+        if isHttps </span><span class="cov8" title="1">{
+                data, contentType, err = fetchHttpsPlaybook(path, headers)
+        }</span> else<span class="cov8" title="1"> {
+                data, err = os.ReadFile(path)
+        }</span>
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                return nil, nil, err
+        }</span>
+
+        <span class="cov8" title="1">var config playbook.Playbook
+        isJson := strings.HasPrefix(strings.ToLower(contentType), "application/json") ||
+                strings.HasSuffix(strings.ToLower(path), ".json") &amp;&amp; !isHttps
+
+        if isJson </span><span class="cov8" title="1">{
+                err = json.Unmarshal(data, &amp;config)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, nil, fmt.Errorf("failed to parse JSON: %w", err)
+                }</span>
+        } else<span class="cov8" title="1"> {
+                err = yaml.Unmarshal(data, &amp;config)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, nil, fmt.Errorf("failed to parse YAML: %w", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return &amp;config, data, nil</span>
+}
+
+func fetchHttpsPlaybook(url string, headers map[string]string) ([]byte, string, error) <span class="cov8" title="1">{
+        client := &amp;http.Client{
+                Timeout: 60 * time.Second,
+        }
+
+        req, err := http.NewRequest("GET", url, nil)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, "", fmt.Errorf("failed to create request: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range headers </span><span class="cov8" title="1">{
+                req.Header.Set(k, v)
+        }</span>
+
+        <span class="cov8" title="1">resp, err := client.Do(req)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, "", fmt.Errorf("failed to fetch remote playbook: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer resp.Body.Close()
+
+        if resp.StatusCode != http.StatusOK </span><span class="cov8" title="1">{
+                return nil, "", fmt.Errorf("failed to fetch remote playbook: status %d", resp.StatusCode)
+        }</span>
+
+        <span class="cov8" title="1">data, err := io.ReadAll(resp.Body)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, "", err
+        }</span>
+
+        <span class="cov8" title="1">return data, resp.Header.Get("Content-Type"), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package headerflags
+
+import (
+        "strings"
+)
+
+// HeaderFlags implements flag.Value to parse multiple HTTP headers from CLI.
+type HeaderFlags []string
+
+func (h *HeaderFlags) String() string <span class="cov8" title="1">{
+        return strings.Join(*h, ", ")
+}</span>
+
+func (h *HeaderFlags) Set(value string) error <span class="cov8" title="1">{
+        *h = append(*h, value)
+        return nil
+}</span>
+
+// ToMap converts the slice of "Key: Value" strings into a map.
+func (h *HeaderFlags) ToMap() map[string]string <span class="cov8" title="1">{
+        headers := make(map[string]string)
+        for _, val := range *h </span><span class="cov8" title="1">{
+                parts := strings.SplitN(val, ":", 2)
+                if len(parts) == 2 </span><span class="cov8" title="1">{
+                        headers[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+                }</span>
+        }
+        <span class="cov8" title="1">return headers</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package reportwriter
+
+import (
+        "encoding/json"
+        "fmt"
+        "os"
+        "path/filepath"
+        "time"
+
+        "github.com/benedictjohannes/crobe/report"
+)
+
+var DefaultReportsDir = ""
+
+// WriteToFolder saves the report files to a local directory.
+func WriteToFolder(reportsDir string, res report.FinalResult) error <span class="cov8" title="1">{
+        if reportsDir == "" </span><span class="cov8" title="1">{
+                reportsDir = "reports"
+        }</span>
+        <span class="cov8" title="1">now := time.Now()
+        timestamp := now.Format("060102-150405")
+
+        if _, err := os.Stat(reportsDir); os.IsNotExist(err) </span><span class="cov8" title="1">{
+                if err := os.MkdirAll(reportsDir, 0755); err != nil </span><span class="cov8" title="1">{
+                        return fmt.Errorf("failed to create reports directory: %w", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">reportBase := filepath.Join(reportsDir, timestamp+".report")
+        logFile := reportBase + ".log"
+        mdFile := reportBase + ".md"
+        jsonFile := reportBase + ".json"
+
+        if err := os.WriteFile(logFile, []byte(res.Log), 0644); err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to write log file: %w", err)
+        }</span>
+        <span class="cov8" title="1">if err := os.WriteFile(mdFile, []byte(res.Markdown), 0644); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to write md file: %w", err)
+        }</span>
+        <span class="cov8" title="1">jsonBytes, err := json.MarshalIndent(res.Structured, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal JSON report: %w", err)
+        }</span>
+        <span class="cov8" title="1">if err := os.WriteFile(jsonFile, jsonBytes, 0644); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to write JSON file: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("\n✅ Generation Complete!\n")
+        fmt.Printf("📊 PASS: %d, FAIL: %d\n", res.Structured.Stats.Passed, res.Structured.Stats.Failed)
+        fmt.Printf("📝 Log: %s\n", logFile)
+        fmt.Printf("📝 Markdown: %s\n", mdFile)
+        fmt.Printf("📊 JSON Report: %s\n", jsonFile)
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package reportwriter
+
+import (
+        "github.com/benedictjohannes/crobe/playbook"
+        "github.com/benedictjohannes/crobe/report"
+        "bytes"
+        "crypto/hmac"
+        "crypto/sha256"
+        "encoding/base64"
+        "encoding/hex"
+        "encoding/json"
+        "fmt"
+        "io"
+        "mime/multipart"
+        "net/http"
+        "net/textproto"
+        "strings"
+        "time"
+)
+
+type JSONPayload struct {
+        JSON          string `json:"json"`
+        JSONSignature string `json:"jsonSignature,omitempty"`
+        MD            string `json:"md"`
+        MDSignature   string `json:"mdSignature,omitempty"`
+        Log           string `json:"log"`
+        LogSignature  string `json:"logSignature,omitempty"`
+}
+
+type reportFile struct {
+        filename    string
+        contentType string
+        content     []byte
+}
+
+// WriteToHTTP sends the report to a remote server.
+func WriteToHTTP(config *playbook.ReportDestinationConfig, res report.FinalResult) (err error) <span class="cov8" title="1">{
+        if !strings.HasPrefix(config.URL, "https://") </span><span class="cov8" title="1">{
+                return fmt.Errorf("insecure HTTP report submission is not allowed: %s", config.URL)
+        }</span>
+
+        <span class="cov8" title="1">jsonBytes, err := json.MarshalIndent(res.Structured, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+
+        <span class="cov8" title="1">files := []reportFile{
+                {"report.json", "application/json", jsonBytes},
+                {"report.md", "text/markdown", []byte(res.Markdown)},
+                {"report.log", "text/plain", []byte(res.Log)},
+        }
+
+        var body io.Reader
+        var contentType string
+
+        if config.Format == playbook.ReportFormatJSON </span><span class="cov8" title="1">{
+                jsonB64 := base64.StdEncoding.EncodeToString(jsonBytes)
+                mdB64 := base64.StdEncoding.EncodeToString([]byte(res.Markdown))
+                logB64 := base64.StdEncoding.EncodeToString([]byte(res.Log))
+
+                payload := JSONPayload{
+                        JSON: jsonB64,
+                        MD:   mdB64,
+                        Log:  logB64,
+                }
+
+                if config.SignatureSecret != "" </span><span class="cov8" title="1">{
+                        payload.JSONSignature = calculateHMAC(jsonB64, config.SignatureSecret)
+                        payload.MDSignature = calculateHMAC(mdB64, config.SignatureSecret)
+                        payload.LogSignature = calculateHMAC(logB64, config.SignatureSecret)
+                }</span>
+
+                <span class="cov8" title="1">jsonBody, err := json.MarshalIndent(payload, "", "  ")
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">body = bytes.NewReader(jsonBody)
+                contentType = "application/json"</span>
+        } else<span class="cov8" title="1"> {
+                // Default to Multipart
+                b := &amp;bytes.Buffer{}
+                writer := multipart.NewWriter(b)
+                for _, f := range files </span><span class="cov8" title="1">{
+                        if err = addFilePart(writer, f.filename, f.contentType, f.content, config.SignatureSecret); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                }
+                <span class="cov8" title="1">writer.Close()
+                body = b
+                contentType = writer.FormDataContentType()</span>
+        }
+
+        <span class="cov8" title="1">req, err := http.NewRequest("POST", config.URL, body)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to create HTTP request: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">req.Header.Set("Content-Type", contentType)
+        for k, v := range config.AdditionalHeaders </span><span class="cov8" title="1">{
+                req.Header.Set(k, v)
+        }</span>
+
+        <span class="cov8" title="1">client := &amp;http.Client{
+                Timeout: 60 * time.Second,
+        }
+
+        formatStr := config.Format
+        if config.Format == "" </span><span class="cov8" title="1">{
+                formatStr = "multipart (default)"
+        }</span>
+        <span class="cov8" title="1">fmt.Printf("📤 Submitting report to: %s (Format: %s)\n", config.URL, formatStr)
+
+        resp, err := client.Do(req)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to submit report: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer resp.Body.Close()
+
+        if resp.StatusCode &lt; 200 || resp.StatusCode &gt;= 300 </span><span class="cov8" title="1">{
+                respBody, _ := io.ReadAll(resp.Body)
+                return fmt.Errorf("failed to submit report: status %d. Response: %s", resp.StatusCode, string(respBody))
+        }</span>
+
+        <span class="cov8" title="1">fmt.Printf("\n✅ Submission Complete!\n")
+        fmt.Printf("📊 PASS: %d, FAIL: %d\n", res.Structured.Stats.Passed, res.Structured.Stats.Failed)
+        fmt.Printf("✅ Status: %d\n", resp.StatusCode)
+        return nil</span>
+}
+
+func addFilePart(writer *multipart.Writer, filename string, contentType string, content []byte, secret string) error <span class="cov8" title="1">{
+        // Base64 encode the content
+        b64Content := base64.StdEncoding.EncodeToString(content)
+
+        // 1. Add the Base64-encoded file part
+        h := make(textproto.MIMEHeader)
+        h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, filename, filename))
+        h.Set("Content-Type", contentType)
+        h.Set("Content-Transfer-Encoding", "base64")
+
+        part, err := writer.CreatePart(h)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create multipart for %s: %w", filename, err)
+        }</span>
+        <span class="cov8" title="1">_, err = part.Write([]byte(b64Content))
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to write multipart content for %s: %w", filename, err)
+        }</span>
+
+        // 2. Add the signature part if secret is provided
+        <span class="cov8" title="1">if secret != "" </span><span class="cov8" title="1">{
+                sig := calculateHMAC(b64Content, secret)
+                sigFilename := filename + ".signature.txt"
+                sigPart, err := writer.CreateFormFile(sigFilename, sigFilename)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create signature part for %s: %w", filename, err)
+                }</span>
+                <span class="cov8" title="1">_, err = sigPart.Write([]byte(sig))
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to write signature content for %s: %w", filename, err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func calculateHMAC(data string, secret string) string <span class="cov8" title="1">{
+        h := hmac.New(sha256.New, []byte(secret))
+        h.Write([]byte(data))
+        return hex.EncodeToString(h.Sum(nil))
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package reportwriter
+
+import (
+        "fmt"
+
+        "github.com/benedictjohannes/crobe/playbook"
+        "github.com/benedictjohannes/crobe/report"
+)
+
+// DispatchReport decides where to send the report based on the configuration.
+func DispatchReport(config *playbook.Playbook, res report.FinalResult) error <span class="cov8" title="1">{
+        destination := config.ReportDestination
+        reportsDir := DefaultReportsDir
+
+        // If CLI flag --folder is provided, it ALWAYS overrides to local folder destination
+        if reportsDir != "" </span><span class="cov8" title="1">{
+                destination = playbook.ReportDestinationFolder
+        }</span>
+
+        <span class="cov8" title="1">switch destination </span>{
+        case playbook.ReportDestinationHTTPS:<span class="cov8" title="1">
+                if config.ReportDestinationHTTPS == nil </span><span class="cov8" title="1">{
+                        return fmt.Errorf("reportDestination is 'https' but reportDestinationHttps is missing")
+                }</span>
+                <span class="cov8" title="1">return WriteToHTTP(config.ReportDestinationHTTPS, res)</span>
+        case playbook.ReportDestinationFolder, "":<span class="cov8" title="1">
+                if reportsDir == "" </span><span class="cov8" title="1">{
+                        reportsDir = config.ReportDestinationFolder
+                }</span>
+                <span class="cov8" title="1">return WriteToFolder(reportsDir, res)</span>
+        default:<span class="cov8" title="1">
+                return fmt.Errorf("unknown reportDestination: %s", destination)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package transpile
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+        "strings"
+
+        "github.com/benedictjohannes/crobe/internal/configsource"
+        "github.com/benedictjohannes/crobe/playbook"
+        "gopkg.in/yaml.v3"
+)
+
+// BakeFile loads a raw playbook from inputPath, transpiles all external scripts,
+// validates the result, and saves it to outputPath.
+func BakeFile(inputPath, outputPath string) error <span class="cov8" title="1">{
+        if strings.HasPrefix(inputPath, "https://") </span><span class="cov8" title="1">{
+                return fmt.Errorf("baking remote playbooks is not supported as relative paths to external script files would break")
+        }</span>
+
+        <span class="cov8" title="1">config, _, err := configsource.LoadConfig(inputPath, nil)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to load input: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if err := Preprocess(config, filepath.Dir(inputPath)); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if err := playbook.ValidateConfig(*config, false); err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("validation error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">outData, err := yaml.Marshal(config)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal YAML: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">err = os.WriteFile(outputPath, outData, 0644)
+        if err != nil </span><span class="cov8" title="1">{
+                return fmt.Errorf("failed to write output: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Preprocess walks through the playbook configuration and transpiles any external script files
+// (funcFile, shellFuncFile) into inlined JavaScript code.
+func Preprocess(config *playbook.Playbook, baseDir string) error <span class="cov8" title="1">{
+        for i := range config.Sections </span><span class="cov8" title="1">{
+                for j := range config.Sections[i].Assertions </span><span class="cov8" title="1">{
+                        if err := processAssertion(&amp;config.Sections[i].Assertions[j], baseDir); err != nil </span><span class="cov8" title="1">{
+                                return err
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func processAssertion(a *playbook.Assertion, baseDir string) error <span class="cov8" title="1">{
+        for i := range a.PreCmds </span><span class="cov8" title="1">{
+                if err := processExec(&amp;a.PreCmds[i], baseDir); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">for i := range a.Cmds </span><span class="cov8" title="1">{
+                if err := processExec(&amp;a.Cmds[i].Exec, baseDir); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">if err := processEvalRule(&amp;a.Cmds[i].StdOutRule, baseDir); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">if err := processEvalRule(&amp;a.Cmds[i].StdErrRule, baseDir); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">for i := range a.PostCmds </span><span class="cov8" title="1">{
+                if err := processExec(&amp;a.PostCmds[i], baseDir); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func processExec(e *playbook.Exec, baseDir string) error <span class="cov8" title="1">{
+        if e.ShellFuncFile != "" </span><span class="cov8" title="1">{
+                code, err := Transpile(filepath.Join(baseDir, e.ShellFuncFile))
+                if err != nil </span><span class="cov8" title="1">{
+                        return fmt.Errorf("transpilation error for shellFuncFile (%s): %v", e.ShellFuncFile, err)
+                }</span>
+                <span class="cov8" title="1">e.ShellFunc = code
+                e.ShellFuncFile = ""</span>
+        }
+        <span class="cov8" title="1">if e.FuncFile != "" </span><span class="cov8" title="1">{
+                code, err := Transpile(filepath.Join(baseDir, e.FuncFile))
+                if err != nil </span><span class="cov8" title="1">{
+                        return fmt.Errorf("transpilation error for funcFile (%s): %v", e.FuncFile, err)
+                }</span>
+                <span class="cov8" title="1">e.Func = code
+                e.FuncFile = ""</span>
+        }
+        <span class="cov8" title="1">for i := range e.Gather </span><span class="cov8" title="1">{
+                if e.Gather[i].FuncFile != "" </span><span class="cov8" title="1">{
+                        code, err := Transpile(filepath.Join(baseDir, e.Gather[i].FuncFile))
+                        if err != nil </span><span class="cov8" title="1">{
+                                return fmt.Errorf("transpilation error for gather funcFile (%s): %v", e.Gather[i].FuncFile, err)
+                        }</span>
+                        <span class="cov8" title="1">e.Gather[i].Func = code
+                        e.Gather[i].FuncFile = ""</span>
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func processEvalRule(r *playbook.EvaluationRule, baseDir string) error <span class="cov8" title="1">{
+        if r.FuncFile != "" </span><span class="cov8" title="1">{
+                code, err := Transpile(filepath.Join(baseDir, r.FuncFile))
+                if err != nil </span><span class="cov8" title="1">{
+                        return fmt.Errorf("transpilation error for evaluationRule funcFile (%s): %v", r.FuncFile, err)
+                }</span>
+                <span class="cov8" title="1">r.Func = code
+                r.FuncFile = ""</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package transpile
+
+import (
+        "fmt"
+        "os"
+        "strings"
+
+        "github.com/evanw/esbuild/pkg/api"
+)
+
+// Transpile converts TypeScript/Modern JS to a format suitable for the Goja runtime.
+func Transpile(path string) (string, error) <span class="cov8" title="1">{
+        data, err := os.ReadFile(path)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">codeStr := string(data)
+        isModule := false
+        trimmed := strings.TrimSpace(codeStr)
+        if (len(trimmed) &gt;= 7 &amp;&amp; trimmed[:7] == "export ") ||
+                (len(trimmed) &gt;= 7 &amp;&amp; trimmed[:7] == "import ") ||
+                strings.Contains(codeStr, "\nexport ") ||
+                strings.Contains(codeStr, "\nimport ") </span><span class="cov8" title="1">{
+                isModule = true
+        }</span>
+
+        <span class="cov8" title="1">opts := api.TransformOptions{
+                Loader: api.LoaderTS,
+                Target: api.ES2022,
+        }
+
+        if isModule </span><span class="cov8" title="1">{
+                opts.Format = api.FormatCommonJS
+                opts.MinifyWhitespace = true
+                opts.MinifyIdentifiers = true
+                opts.MinifySyntax = true
+        }</span> else<span class="cov8" title="1"> {
+                opts.Format = api.FormatDefault
+                opts.MinifyWhitespace = true
+        }</span>
+
+        <span class="cov8" title="1">result := api.Transform(codeStr, opts)
+        if len(result.Errors) &gt; 0 </span><span class="cov8" title="1">{
+                return "", fmt.Errorf("esbuild error: %v", result.Errors[0].Text)
+        }</span>
+
+        <span class="cov8" title="1">if isModule </span><span class="cov8" title="1">{
+                return fmt.Sprintf("(function(){var exports={};var module={exports:exports};%s;return module.exports.default||module.exports})()", result.Code), nil
+        }</span>
+
+        <span class="cov8" title="1">return strings.TrimSpace(string(result.Code)), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package playbook
+
+type Assertion struct {
+        Code            string `yaml:"code" json:"code" jsonschema:"description=Unique code for the assertion,minLength=3"`
+        Title           string `yaml:"title" json:"title" jsonschema:"description=Title of the assertion,minLength=3"`
+        Description     string `yaml:"description" json:"description" jsonschema:"description=Detailed description of what is being checked,minLength=3"`
+        PreCmds         []Exec `yaml:"preCmds,omitempty" json:"preCmds,omitempty" jsonschema:"description=Executions before main commands. Data gathered here persists for the whole assertion."`
+        Cmds            []Cmd  `yaml:"cmds" json:"cmds" jsonschema:"description=Main command units to execute. At least one required.,minItems=1"`
+        PostCmds        []Exec `yaml:"postCmds,omitempty" json:"postCmds,omitempty" jsonschema:"description=Executions after all main commands settle."`
+        MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed (Default: sum of all cmds' passScores)"`
+        PassDescription string `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if the assertion passes,minLength=3"`
+        FailDescription string `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if the assertion fails,minLength=3"`
+}
+
+func (a Assertion) GetMinPassingScore() int <span class="cov8" title="1">{
+        if a.MinPassingScore != nil </span><span class="cov8" title="1">{
+                return *a.MinPassingScore
+        }</span>
+
+        <span class="cov8" title="1">sum := 0
+        for _, c := range a.Cmds </span><span class="cov8" title="1">{
+                sum += c.GetPassScore()
+        }</span>
+
+        <span class="cov8" title="1">if sum == 0 </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+
+        <span class="cov8" title="1">return sum</span>
+}
+
+type Cmd struct {
+        Exec          Exec           `yaml:"exec" json:"exec" jsonschema:"description=Execution details"`
+        PassScore     *int           `yaml:"passScore,omitempty" json:"passScore,omitempty" jsonschema:"description=Score added if evaluation passes (Default: 1),default=1"`
+        FailScore     *int           `yaml:"failScore,omitempty" json:"failScore,omitempty" jsonschema:"description=Score added if evaluation fails (Default: -1),default=-1"`
+        StdOutRule    EvaluationRule `yaml:"stdOutRule,omitempty" json:"stdOutRule,omitempty" jsonschema:"description=Rule for stdout evaluation. Takes precedence over exitCodeRules if result is -1 or 1."`
+        StdErrRule    EvaluationRule `yaml:"stdErrRule,omitempty" json:"stdErrRule,omitempty" jsonschema:"description=Rule for stderr evaluation. Takes absolute precedence over stdOutRule if result is -1 or 1."`
+        ExitCodeRules []ExitCodeRule `yaml:"exitCodeRules,omitempty" json:"exitCodeRules,omitempty" jsonschema:"description=Rules for exit code evaluation. Evaluated only if stdOutRule and stdErrRule are neutral."`
+}
+
+func (c Cmd) GetPassScore() int <span class="cov8" title="1">{
+        if c.PassScore == nil </span><span class="cov8" title="1">{
+                return 1
+        }</span>
+        <span class="cov8" title="1">return *c.PassScore</span>
+}
+
+func (c Cmd) GetFailScore() int <span class="cov8" title="1">{
+        if c.FailScore == nil </span><span class="cov8" title="1">{
+                return -1
+        }</span>
+        <span class="cov8" title="1">return *c.FailScore</span>
+}
+
+type Exec struct {
+        Shell               string       `yaml:"shell,omitempty" json:"shell,omitempty" jsonschema:"description=Shell/Interpreter to use (eg: bash\\, powershell\\, sh). Optional. Defaults: pwsh (windows\\, falls back to powershell if not found)\\, zsh (mac)\\, bash (linux and others). Note that for bash and powershell\\, set -o pipefail and $ErrorActionPreference = 'Stop' is added to catch execution errors. Non-shell interpreters like python3 or node are supported. Set to ! to directly execute the script as cmd and args\\, executed directly (eg: ls -lah)."`
+        ShellFunc           string       `yaml:"shellFunc,omitempty" json:"shellFunc,omitempty" jsonschema:"description=Embedded JS code that returns the shell to use. Takes precedence over shell. Signature: ({ assertionContext\\, env\\, os\\, arch\\, user\\, cwd }) =&gt; string."`
+        ShellFuncFile       string       `yaml:"shellFuncFile,omitempty" json:"shellFuncFile,omitempty" jsonschema:"description=Path to JS/TS file for shellFunc. BUILDER ONLY."`
+        Script              string       `yaml:"script,omitempty" json:"script,omitempty" jsonschema:"description=Script to execute."`
+        ScriptFileExtension string       `yaml:"scriptFileExtension,omitempty" json:"scriptFileExtension,omitempty" jsonschema:"description=Extension for the temporary script file (eg: sh\\, ps1\\, py\\, js). Optional. If not specified\\, defaults to 'sh' for bash/sh/zsh\\, 'ps1' for powershell/pwsh\\, and empty for others."`
+        Func                string       `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=Embedded JS code that returns the script to be executed. Takes precedence over script. Signature: ({ assertionContext\\, env\\, os\\, arch\\, user\\, cwd }) =&gt; string."`
+        FuncFile            string       `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
+        Gather              []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
+        ExcludeFromReport   bool         `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide stdout/stderr results from log and markdown report"`
+}
+
+type EvaluationRule struct {
+        Regex         string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to match against output"`
+        IncludeStdErr *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
+        Func          string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for evaluation. Takes precedence over regex. Signature: (stdout\\, stderr\\, assertionContext) =&gt; -1 | 0 | 1"`
+        FuncFile      string `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
+}
+
+func (r EvaluationRule) GetIncludeStdErr() bool <span class="cov8" title="1">{
+        if r.IncludeStdErr == nil </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">return *r.IncludeStdErr</span>
+}
+
+type GatherSpec struct {
+        Key               string `yaml:"key" json:"key" jsonschema:"description=Key in context"`
+        ExcludeFromReport bool   `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide key from JSON report"`
+        Regex             string `yaml:"regex,omitempty" json:"regex,omitempty" jsonschema:"description=Regex to extract data"`
+        IncludeStdErr     *bool  `yaml:"includeStdErr,omitempty" json:"includeStdErr,omitempty" jsonschema:"description=Include stderr in regex evaluation,default=false"`
+        Func              string `yaml:"func,omitempty" json:"func,omitempty" jsonschema:"description=JS function for extraction. Takes precedence over regex. Signature: (stdout\\, stderr\\, assertionContext) =&gt; string"`
+        FuncFile          string `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
+}
+
+func (g GatherSpec) GetIncludeStdErr() bool <span class="cov8" title="1">{
+        if g.IncludeStdErr == nil </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">return *g.IncludeStdErr</span>
+}
+
+type ExitCodeRule struct {
+        Min    *int `yaml:"min,omitempty" json:"min,omitempty" jsonschema:"description=Minimum exit code (inclusive)"`
+        Max    *int `yaml:"max,omitempty" json:"max,omitempty" jsonschema:"description=Maximum exit code (inclusive)"`
+        Result int  `yaml:"result" json:"result" jsonschema:"description=Score result: -1 (Fail)\\, 0 (Neutral)\\, 1 (Pass). The first matching rule wins."`
+}
+
+type ReportDestination string
+
+const (
+        ReportDestinationFolder ReportDestination = "folder"
+        ReportDestinationHTTPS  ReportDestination = "https"
+)
+
+type Section struct {
+        Title       string      `yaml:"title" json:"title" jsonschema:"description=Title of the section,minLength=3"`
+        Description []string    `yaml:"description" json:"description" jsonschema:"description=List of descriptions for the section,minItems=1"`
+        Assertions  []Assertion `yaml:"assertions" json:"assertions" jsonschema:"description=List of assertions within this section,minItems=1"`
+}
+
+type ReportFormat string
+
+const (
+        ReportFormatMultipart ReportFormat = "multipart"
+        ReportFormatJSON      ReportFormat = "json"
+)
+
+type ReportDestinationConfig struct {
+        URL               string            `yaml:"url" json:"url" jsonschema:"description=URL to post report content to"`
+        Format            ReportFormat      `yaml:"format,omitempty" json:"format,omitempty" jsonschema:"description=Format of the report (json|multipart),default=multipart,enum=multipart,enum=json"`
+        SignatureSecret   string            `yaml:"signatureSecret,omitempty" json:"signatureSecret,omitempty" jsonschema:"description=Secret for HMAC-SHA256 signature"`
+        AdditionalHeaders map[string]string `yaml:"additionalHeaders,omitempty" json:"additionalHeaders,omitempty" jsonschema:"description=Custom headers for the request"`
+}
+
+type Playbook struct {
+        Title                   string                   `yaml:"title" json:"title" jsonschema:"description=Title of the report,minLength=3"`
+        ReportFrontmatter       map[string]interface{}   `yaml:"reportFrontmatter,omitempty" json:"reportFrontmatter,omitempty" jsonschema:"description=Custom metadata merged into the generated markdown report frontmatter."`
+        Sections                []Section                `yaml:"sections" json:"sections" jsonschema:"description=Logical groups of assertions.,minItems=1"`
+        ReportDestination       ReportDestination        `yaml:"reportDestination,omitempty" json:"reportDestination,omitempty" jsonschema:"description=Destination for the report (folder|https),default=folder,enum=folder,enum=https"`
+        ReportDestinationFolder string                   `yaml:"reportDestinationFolder,omitempty" json:"reportDestinationFolder,omitempty" jsonschema:"description=Folder path if reportDestination is 'folder'. Defaults to 'reports'."`
+        ReportDestinationHTTPS  *ReportDestinationConfig `yaml:"reportDestinationHttps,omitempty" json:"reportDestinationHttps,omitempty" jsonschema:"description=Required if reportDestination is 'https'."`
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package playbook
+
+import (
+        "encoding/json"
+        "fmt"
+
+        "github.com/invopop/jsonschema"
+)
+
+func GenerateSchema() (string, error) <span class="cov8" title="1">{
+        reflector := &amp;jsonschema.Reflector{
+                DoNotReference: false,
+                ExpandedStruct: true,
+        }
+
+        s := reflector.Reflect(&amp;Playbook{})
+        data, err := json.MarshalIndent(s, "", "  ")
+        if err != nil </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("failed to generate schema: %v", err)
+        }</span>
+        <span class="cov8" title="1">return string(data), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package playbook
+
+import (
+        "fmt"
+)
+
+func ValidateConfig(config Playbook, isAgent bool) error <span class="cov8" title="1">{
+        codes := make(map[string]bool)
+
+        for _, section := range config.Sections </span><span class="cov8" title="1">{
+                for _, assertion := range section.Assertions </span><span class="cov8" title="1">{
+                        if assertion.Code == "" </span><span class="cov8" title="1">{
+                                return fmt.Errorf("assertion '%s' in section '%s' is missing a 'code'", assertion.Title, section.Title)
+                        }</span>
+                        <span class="cov8" title="1">if codes[assertion.Code] </span><span class="cov8" title="1">{
+                                return fmt.Errorf("duplicate code found: %s", assertion.Code)
+                        }</span>
+                        <span class="cov8" title="1">codes[assertion.Code] = true
+
+                        if isAgent </span><span class="cov8" title="1">{
+                                if err := checkNoFuncFile(assertion); err != nil </span><span class="cov8" title="1">{
+                                        return err
+                                }</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func checkNoFuncFile(assertion Assertion) error <span class="cov8" title="1">{
+        for _, exec := range assertion.PreCmds </span><span class="cov8" title="1">{
+                if exec.ShellFuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains shellFuncFile in preCmd", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">if exec.FuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains funcFile in preCmd", assertion.Code)
+                }</span>
+        }
+        <span class="cov8" title="1">for _, cmd := range assertion.Cmds </span><span class="cov8" title="1">{
+                if cmd.Exec.ShellFuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains shellFuncFile in cmd", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">if cmd.Exec.FuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains funcFile in cmd", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">if cmd.StdOutRule.FuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains funcFile in stdOutRule", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">if cmd.StdErrRule.FuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains funcFile in stdErrRule", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">for _, g := range cmd.Exec.Gather </span><span class="cov8" title="1">{
+                        if g.FuncFile != "" </span><span class="cov8" title="1">{
+                                return fmt.Errorf("agent error: assertion %s contains funcFile in gather", assertion.Code)
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">for _, exec := range assertion.PostCmds </span><span class="cov8" title="1">{
+                if exec.ShellFuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains shellFuncFile in postCmd", assertion.Code)
+                }</span>
+                <span class="cov8" title="1">if exec.FuncFile != "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf("agent error: assertion %s contains funcFile in postCmd", assertion.Code)
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package report
+
+import (
+        "fmt"
+        "strings"
+        "time"
+
+        "github.com/benedictjohannes/crobe/executor"
+        "github.com/benedictjohannes/crobe/playbook"
+
+        "gopkg.in/yaml.v3"
+)
+
+type Assertion struct {
+        Timestamps struct {
+                Start time.Time `json:"start"`
+                End   time.Time `json:"end"`
+        } `json:"timestamps"`
+        Passed   bool                   `json:"passed"`
+        Score    int                    `json:"score"`
+        MinScore int                    `json:"minScore"`
+        Context  map[string]interface{} `json:"context"`
+}
+
+type Stats struct {
+        Passed int `json:"passed"`
+        Failed int `json:"failed"`
+}
+
+type FinalReport struct {
+        Timestamps struct {
+                Start time.Time `json:"start"`
+                End   time.Time `json:"end"`
+        } `json:"timestamps"`
+        Username   string               `json:"username"`
+        OS         string               `json:"os"`
+        Arch       string               `json:"arch"`
+        Assertions map[string]Assertion `json:"assertions"`
+        Stats      Stats                `json:"stats"`
+}
+
+type FinalResult struct {
+        Structured FinalReport
+        Log        string
+        Markdown   string
+}
+
+func GenerateReport(trace executor.ExecutionTrace) FinalResult <span class="cov8" title="1">{
+        config := trace.Playbook
+        var md strings.Builder
+        var log strings.Builder
+
+        logName := trace.Timestamps.Start.Format(time.RFC3339)
+        if trace.Timestamps.Start.IsZero() </span><span class="cov0" title="0">{
+                logName = "execution trace"
+        }</span>
+
+        <span class="cov8" title="1">log.WriteString(fmt.Sprintf("&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; REPORT LOG: %s &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;\n\n", logName))
+
+        if config.ReportFrontmatter == nil </span><span class="cov0" title="0">{
+                config.ReportFrontmatter = make(map[string]interface{})
+        }</span>
+        <span class="cov8" title="1">if _, ok := config.ReportFrontmatter["title"]; !ok </span><span class="cov8" title="1">{
+                config.ReportFrontmatter["title"] = config.Title
+        }</span>
+        <span class="cov8" title="1">dateStr := ""
+        if !trace.Timestamps.Start.IsZero() </span><span class="cov8" title="1">{
+                dateStr = trace.Timestamps.Start.Format("2006-01-02")
+        }</span>
+        <span class="cov8" title="1">if _, ok := config.ReportFrontmatter["date"]; !ok </span><span class="cov8" title="1">{
+                config.ReportFrontmatter["date"] = dateStr
+        }</span>
+
+        <span class="cov8" title="1">fmBytes, _ := yaml.Marshal(config.ReportFrontmatter)
+        md.WriteString("---\n")
+        md.Write(fmBytes)
+        md.WriteString("---\n\n")
+
+        md.WriteString(fmt.Sprintf("# %s\n\nGenerated on: %s\n\n---\n\n", config.Title, trace.Timestamps.Start.Format(time.DateTime)))
+
+        finalReport := FinalReport{
+                Username:   trace.Username,
+                OS:         trace.OS,
+                Arch:       trace.Arch,
+                Assertions: make(map[string]Assertion),
+        }
+        finalReport.Timestamps.Start = trace.Timestamps.Start
+        finalReport.Timestamps.End = trace.Timestamps.End
+
+        for _, sectionCtx := range trace.Sections </span><span class="cov8" title="1">{
+                section := sectionCtx.PlaybookSection
+                md.WriteString(fmt.Sprintf("## %s\n\n", section.Title))
+                log.WriteString(fmt.Sprintf("&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; SECTION: %s &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;\n\n", section.Title))
+                for _, desc := range section.Description </span><span class="cov8" title="1">{
+                        md.WriteString(fmt.Sprintf("%s  \n", desc))
+                }</span>
+                <span class="cov8" title="1">md.WriteString("\n")
+
+                for _, assCtx := range sectionCtx.Assertions </span><span class="cov8" title="1">{
+                        assertion := assCtx.PlaybookAssertion
+
+                        log.WriteString(fmt.Sprintf("&gt;&gt;&gt;&gt;&gt;&gt;&gt; ASSERTION: %s &lt;&lt;&lt;&lt;&lt;&lt;&lt;\n\n", assertion.Title))
+
+                        for _, cmd := range assCtx.CmdLogs </span><span class="cov8" title="1">{
+                                writeExecutionLog(&amp;log, cmd.Exec, cmd.Result, cmd.Err)
+                                if cmd.Err != nil </span><span class="cov0" title="0">{
+                                        log.WriteString(fmt.Sprintf("&gt;&gt;&gt;&gt;&gt; Error executing command: %v &lt;&lt;&lt;&lt;&lt;\n\n", cmd.Err))
+                                }</span>
+                        }
+
+                        <span class="cov8" title="1">report := Assertion{
+                                Passed:   assCtx.Passed,
+                                Score:    assCtx.Score,
+                                MinScore: assCtx.MinScore,
+                                Context:  assCtx.Context,
+                        }
+                        report.Timestamps.Start = assCtx.Timestamps.Start
+                        report.Timestamps.End = assCtx.Timestamps.End
+                        finalReport.Assertions[assertion.Code] = report
+
+                        writeAssertionMarkdown(&amp;md, assCtx)</span>
+                }
+                <span class="cov8" title="1">md.WriteString("---\n\n")</span>
+        }
+
+        <span class="cov8" title="1">finalReport.Stats.Passed = trace.TotalPassed
+        finalReport.Stats.Failed = trace.TotalFailed
+
+        return FinalResult{
+                Structured: finalReport,
+                Markdown:   md.String(),
+                Log:        log.String(),
+        }</span>
+}
+
+func isEvidenceMaterial(s string) bool <span class="cov8" title="1">{
+        if strings.TrimSpace(s) == "" </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">if s == "[REDACTED]" || s == "# --- STDOUT ---" || s == "# --- STDERR ---" </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">return true</span>
+}
+
+func writeExecutionLog(log *strings.Builder, exec playbook.Exec, res executor.ExecutionResult, err error) <span class="cov8" title="1">{
+        exclude := exec.ExcludeFromReport
+        script := strings.TrimSpace(exec.Script)
+        cmdTitle := "COMMAND"
+        isMultiline := len(strings.Split(script, "\n")) &gt; 1
+        if isMultiline </span><span class="cov8" title="1">{
+                cmdTitle = "SCRIPT"
+        }</span> else<span class="cov8" title="1"> {
+                cmdTitle += ": " + script
+        }</span>
+
+        <span class="cov8" title="1">log.WriteString(fmt.Sprintf("&gt;&gt;&gt;&gt;&gt; %s &lt;&lt;&lt;&lt;&lt;\n", cmdTitle))
+        if isMultiline </span><span class="cov8" title="1">{
+                log.WriteString(script)
+                if !strings.HasSuffix(script, "\n") </span><span class="cov8" title="1">{
+                        log.WriteString("\n")
+                }</span>
+                <span class="cov8" title="1">log.WriteString("&lt;&lt;&lt;&lt;&lt; END SCRIPT")
+                log.WriteString("\n")</span>
+        } else<span class="cov8" title="1"> {
+                log.WriteString("\n")
+        }</span>
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                log.WriteString(fmt.Sprintf("&gt;&gt;&gt; ERROR: %v &lt;&lt;&lt;\n", err))
+        }</span>
+
+        <span class="cov8" title="1">if res.Stdout != "" </span><span class="cov8" title="1">{
+                log.WriteString("&gt;&gt;&gt; STDOUT &lt;&lt;&lt;\n")
+                if exclude </span><span class="cov8" title="1">{
+                        log.WriteString("[REDACTED]\n")
+                }</span> else<span class="cov8" title="1"> {
+                        log.WriteString(res.Stdout)
+                        if !strings.HasSuffix(res.Stdout, "\n") </span><span class="cov8" title="1">{
+                                log.WriteString("\n")
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">if res.Stderr != "" </span><span class="cov8" title="1">{
+                log.WriteString("&gt;&gt;&gt; STDERR &lt;&lt;&lt;\n")
+                if exclude </span><span class="cov8" title="1">{
+                        log.WriteString("[REDACTED]\n")
+                }</span> else<span class="cov8" title="1"> {
+                        log.WriteString(res.Stderr)
+                        if !strings.HasSuffix(res.Stderr, "\n") </span><span class="cov8" title="1">{
+                                log.WriteString("\n")
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">log.WriteString("\n")</span>
+}
+
+func writeAssertionMarkdown(md *strings.Builder, a executor.AssertionContext) <span class="cov8" title="1">{
+        assertion := a.PlaybookAssertion
+
+        md.WriteString(fmt.Sprintf("### %s\n\n", assertion.Title))
+        md.WriteString(fmt.Sprintf("%s\n\n", assertion.Description))
+
+        outputs := a.Outputs
+        shouldSkipEvidence := true
+        for _, o := range outputs </span><span class="cov8" title="1">{
+                if isEvidenceMaterial(o) </span><span class="cov8" title="1">{
+                        shouldSkipEvidence = false
+                        break</span>
+                }
+        }
+        <span class="cov8" title="1">if !shouldSkipEvidence </span><span class="cov8" title="1">{
+                md.WriteString("**Evidence:**\n")
+                md.WriteString("```\n")
+                md.WriteString(strings.Join(outputs, "\n") + "\n")
+                md.WriteString("```\n\n")
+        }</span>
+
+        <span class="cov8" title="1">if a.Passed </span><span class="cov8" title="1">{
+                if assertion.PassDescription != "" </span><span class="cov8" title="1">{
+                        md.WriteString(fmt.Sprintf("&gt; ✅ **Pass:** %s\n\n", assertion.PassDescription))
+                }</span> else<span class="cov0" title="0"> {
+                        md.WriteString("&gt; ✅ **Assertion Passed**")
+                }</span>
+        } else<span class="cov8" title="1"> {
+                if assertion.FailDescription != "" </span><span class="cov8" title="1">{
+                        md.WriteString(fmt.Sprintf("&gt; ❌ **Fail:** %s\n\n", assertion.FailDescription))
+                }</span> else<span class="cov0" title="0"> {
+                        md.WriteString("&gt; ❌ **Assertion Failed**")
+                }</span>
+        }
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
