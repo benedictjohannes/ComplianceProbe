@@ -7,19 +7,40 @@ import (
 func TestAssertion_GetMinPassingScore(t *testing.T) {
 	one := 1
 	five := 5
+	zero := 0
 	tests := []struct {
 		name string
 		a    Assertion
 		want int
 	}{
 		{
-			name: "nil score returns default 1",
-			a:    Assertion{MinPassingScore: nil},
+			name: "nil score with no cmds returns 1 (fallback)",
+			a:    Assertion{MinPassingScore: nil, Cmds: nil},
 			want: 1,
 		},
 		{
-			name: "explicit 1 returns 1",
-			a:    Assertion{MinPassingScore: &one},
+			name: "nil score with one default cmd returns 1",
+			a:    Assertion{MinPassingScore: nil, Cmds: []Cmd{{}}},
+			want: 1,
+		},
+		{
+			name: "nil score with multiple default cmds returns their count",
+			a:    Assertion{MinPassingScore: nil, Cmds: []Cmd{{}, {}, {}}},
+			want: 3,
+		},
+		{
+			name: "nil score with weighted cmds returns their sum",
+			a:    Assertion{MinPassingScore: nil, Cmds: []Cmd{{PassScore: &five}, {PassScore: &one}}},
+			want: 6,
+		},
+		{
+			name: "nil score with zero-score cmds returns 1 (fallback)",
+			a:    Assertion{MinPassingScore: nil, Cmds: []Cmd{{PassScore: &zero}, {PassScore: &zero}}},
+			want: 1,
+		},
+		{
+			name: "explicit 1 returns 1 even if sum is different",
+			a:    Assertion{MinPassingScore: &one, Cmds: []Cmd{{}, {}}},
 			want: 1,
 		},
 		{

@@ -47,7 +47,7 @@ export interface Assertion {
   /**
    * Minimum score required to consider the assertion as passed.
    * If the sum of command scores is >= minPassingScore, the assertion passes.
-   * Default is 1.
+   * Default is the sum of all cmds' passScores.
    */
   minPassingScore?: number;
 

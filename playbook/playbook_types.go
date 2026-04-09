@@ -7,16 +7,26 @@ type Assertion struct {
 	PreCmds         []Exec `yaml:"preCmds,omitempty" json:"preCmds,omitempty" jsonschema:"description=Executions before main commands. Data gathered here persists for the whole assertion."`
 	Cmds            []Cmd  `yaml:"cmds" json:"cmds" jsonschema:"description=Main command units to execute. At least one required.,minItems=1"`
 	PostCmds        []Exec `yaml:"postCmds,omitempty" json:"postCmds,omitempty" jsonschema:"description=Executions after all main commands settle."`
-	MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed (Default: 1),default=1"`
+	MinPassingScore *int   `yaml:"minPassingScore,omitempty" json:"minPassingScore,omitempty" jsonschema:"description=Minimum score to consider assertion as passed (Default: sum of all cmds' passScores)"`
 	PassDescription string `yaml:"passDescription" json:"passDescription" jsonschema:"description=Message shown if the assertion passes,minLength=3"`
 	FailDescription string `yaml:"failDescription" json:"failDescription" jsonschema:"description=Message shown if the assertion fails,minLength=3"`
 }
 
 func (a Assertion) GetMinPassingScore() int {
-	if a.MinPassingScore == nil {
+	if a.MinPassingScore != nil {
+		return *a.MinPassingScore
+	}
+
+	sum := 0
+	for _, c := range a.Cmds {
+		sum += c.GetPassScore()
+	}
+
+	if sum == 0 {
 		return 1
 	}
-	return *a.MinPassingScore
+
+	return sum
 }
 
 type Cmd struct {
