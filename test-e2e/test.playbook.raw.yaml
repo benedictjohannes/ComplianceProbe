@@ -80,7 +80,9 @@ sections:
                 }
         minPassingScore: 2
         postCmds:
-          - script: rm random_number2.txt
+          # tests the '!' direct execution
+          - shell: '!' 
+            script: rm random_number2.txt
         passDescription: "State machine correctly tracked and incremented the value across stages."
         failDescription: "State machine failed to verify the incremented value."
 

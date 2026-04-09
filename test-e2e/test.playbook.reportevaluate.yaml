@@ -36,41 +36,55 @@ sections:
                       return files.sort().reverse()[0]; 
                     }
 
-          # 3. Audit JSON report content: check gathered content
+          # 3. Audit JSON report content: check gathered contents (using NodeJS)
           - exec:
               func: |
-                ({ assertionContext }) => `cat ${assertionContext.latest_report_json}`
-            stdOutRule:
-              func: |
-                (stdout, stderr, assertionContext) => {
-                  const report = JSON.parse(stdout);
-                  const smTest = report.assertions.JSStateMachineTest;
-                  
-                  // Verification A: num2_secret must NOT be in the JSON
-                  const isRedacted = !smTest.context.hasOwnProperty('num2_secret');
-                  // Verification B: report's num1 must match what we just gathered
-                  const matchesNum1 = String(smTest.context.num1) === String(assertionContext.new_gather_num1);
-                  
-                  return (isRedacted && matchesNum1) ? 1 : -1;
+                ({ assertionContext }) => {
+                  const f = assertionContext.latest_report_json
+                  const n = assertionContext.new_gather_num1
+                  return `
+                    const fs = require('fs')
+                    const r = JSON.parse(fs.readFileSync('${f}', 'utf8')).assertions.JSStateMachineTest
+                    if (Number(r.context.num1) !== ${n}) {
+                      console.error('❌ num1 mismatch: ' + r.context.num1 + ' !== ' + ${JSON.stringify(n)})
+                      process.exit(1)
+                    }
+                    if (Object.prototype.hasOwnProperty.call(r.context, 'num2_secret')) {
+                      console.error('❌ num2_secret was not redacted')
+                      process.exit(2)
+                    }
+                    console.log('✅ num1 matches and num2_secret is redacted')
+                  `
                 }
-          # 4. Audit log report content: check that excludedFromReport is [REDACTED]
+              shell: "node"
+              scriptFileExtension: "js"
+          # 4. Audit log report content: check that excludedFromReport is [REDACTED] (using Python)
           - exec:
-              func: | 
+              func: |
                 ({assertionContext}) => {
-                  const latestlog = assertionContext.latest_report_json.replace('.json', '.log');
-                  return `cat ${latestlog}`;
+                  const logFile = assertionContext.latest_report_json.replace('.json', '.log');
+                  return `
+                import sys
+                log_file = ${JSON.stringify(logFile)}
+                with open(log_file, 'r') as f:
+                    log = f.read()
+
+                marker = '>>>>> COMMAND: cat random_number2.txt <<<<<'
+                entries = log.split('\\n')
+                try:
+                    idx = entries.index(marker)
+                    redacted = entries[idx + 3]
+                    if '[REDACTED]' not in redacted:
+                        print(f'❌ Redaction marker not found in entry: {redacted}')
+                        sys.exit(2)
+                except (ValueError, IndexError):
+                    print('❌ Marker not found in log')
+                    sys.exit(1)
+                print('✅ Redaction marker found in log')
+                sys.exit(0)`
                 }
-            stdOutRule:
-              func: |
-                (stdout, stderr, assertionContext) => {
-                  const marker = '>>>>> COMMAND: cat random_number2.txt <<<<<'  
-                  const entries = stdout.split('\n')
-                  const markerIdx = entries.findIndex(e => e === marker)
-                  if (markerIdx === -1) return -1;
-                  const redactedEntry = entries[markerIdx + 3]
-                  if (!redactedEntry) return -1;
-                  return redactedEntry.includes('[REDACTED]') ? 1 : -1;
-                }
+              shell: "python3"
+              scriptFileExtension: "py"
         postCmds: [{script: "rm random_number1.txt"}]
         minPassingScore: 5
         passDescription: "Report audit successful: Redaction enforced and data integrity verified."

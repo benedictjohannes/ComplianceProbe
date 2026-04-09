@@ -87,7 +87,8 @@ sections:
                       return nums[0] === ctxNum1 && nums[1] === ctxNum2 ? 1 : -1
                     }
           postCmds:
-            - script: rm random_number2.txt
+            - shell: '!'
+              script: rm random_number2.txt
           minPassingScore: 2
           passDescription: State machine correctly tracked and incremented the value across stages.
           failDescription: State machine failed to verify the incremented value.
