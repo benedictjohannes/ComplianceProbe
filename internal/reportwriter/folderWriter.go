@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/benedictjohannes/ComplianceProbe/report"
+	"github.com/benedictjohannes/crobe/report"
 )
 
 var DefaultReportsDir = ""

@@ -49,7 +49,7 @@ export interface Stats {
 
 /**
  * The final structured report generated after a playbook execution.
- * This matches the JSON output structure of ComplianceProbe.
+ * This matches the JSON output structure of Crobe.
  */
 export interface FinalReport {
   /** Timestamps for the overall report generation. */

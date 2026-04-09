@@ -1,6 +1,6 @@
-# compliance-probe 🛡️
+# crobe-sdk 🛡️
 
-TypeScript type definitions for [**ComplianceProbe**](https://github.com/benedictjohannes/ComplianceProbe), a CLI tool written in Go for running compliance checks on a system.
+TypeScript type definitions for [**Crobe**](https://github.com/benedictjohannes/crobe), a CLI tool written in Go for running compliance checks on a system.
 
 This package provides types for three separate stages of the compliance lifecycle:
 
@@ -11,16 +11,16 @@ This package provides types for three separate stages of the compliance lifecycl
 ## 📥 Installation
 
 ```bash
-npm install compliance-probe
+npm install crobe-sdk
 ```
 
 ## 🚀 Usage
 
-### 1. Playbook Script Logic (`compliance-probe/func`)
+### 1. Playbook Script Logic (`crobe-sdk/func`)
 Use these types when writing external `.ts` or `.js` scripts that will be baked into a playbook.
 
 ```typescript
-import { ScriptContext } from 'compliance-probe/func';
+import { ScriptContext } from 'crobe-sdk/func';
 
 /**
  * Generate a dynamic shell command based on the environment.
@@ -30,11 +30,11 @@ export default ({ os }: ScriptContext) => {
 };
 ```
 
-### 2. Full Playbook Definition (`compliance-probe/playbook`)
+### 2. Full Playbook Definition (`crobe-sdk/playbook`)
 Use these types if you are generating playbooks dynamically (e.g., via a web app or server-side script).
 
 ```typescript
-import { Playbook } from 'compliance-probe/playbook';
+import { Playbook } from 'crobe-sdk/playbook';
 
 const playbook: Playbook = {
   title: "Cloud Security Hygiene",
@@ -50,11 +50,11 @@ const playbook: Playbook = {
 };
 ```
 
-### 3. Result Consumption (`compliance-probe/submission`)
+### 3. Result Consumption (`crobe-sdk/submission`)
 Use these types when building a "Central Hub" or dashboard that parses the reports submitted by agents.
 
 ```typescript
-import { FinalReport, RemoteSubmission } from 'compliance-probe/submission';
+import { FinalReport, RemoteSubmission } from 'crobe-sdk/submission';
 
 function handleSubmission(payload: RemoteSubmission) {
   const report: FinalReport = JSON.parse(atob(payload.json));
@@ -66,14 +66,14 @@ function handleSubmission(payload: RemoteSubmission) {
 
 For the best developer experience when writing playbooks manually in YAML or JSON, you can use the JSON schema included in this package.
 
-Alternatively, you can use the schema from latest release `https://github.com/benedictjohannes/ComplianceProbe/releases/latest/download/playbook.schema.json`.
+Alternatively, you can use the schema from latest release `https://github.com/benedictjohannes/crobe/releases/latest/download/playbook.schema.json`.
 
 
 ### VS Code (YAML Extension)
 Add the following line to the top of your `playbook.yaml` file:
 
 ```yaml
-# yaml-language-server: $schema=node_modules/compliance-probe/playbook.schema.json
+# yaml-language-server: $schema=node_modules/crobe-sdk/playbook.schema.json
 title: My Playbook
 ...
 ```

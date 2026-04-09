@@ -3,8 +3,8 @@ package reportwriter
 import (
 	"fmt"
 
-	"github.com/benedictjohannes/ComplianceProbe/playbook"
-	"github.com/benedictjohannes/ComplianceProbe/report"
+	"github.com/benedictjohannes/crobe/playbook"
+	"github.com/benedictjohannes/crobe/report"
 )
 
 // DispatchReport decides where to send the report based on the configuration.

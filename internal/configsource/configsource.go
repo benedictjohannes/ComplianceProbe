@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/benedictjohannes/ComplianceProbe/playbook"
+	"github.com/benedictjohannes/crobe/playbook"
 
 	"gopkg.in/yaml.v3"
 )

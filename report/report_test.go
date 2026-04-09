@@ -1,8 +1,8 @@
 package report
 
 import (
-	"github.com/benedictjohannes/ComplianceProbe/executor"
-	"github.com/benedictjohannes/ComplianceProbe/playbook"
+	"github.com/benedictjohannes/crobe/executor"
+	"github.com/benedictjohannes/crobe/playbook"
 	"fmt"
 	"os"
 	"strings"

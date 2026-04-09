@@ -1,10 +1,10 @@
 {
-  "name": "compliance-probe",
-  "version": "0.3.3",
-  "description": "TypeScript type definitions for ComplianceProbe playbooks and reports",
+  "name": "crobe-sdk",
+  "version": "0.3.4",
+  "description": "Crobe (Compliance Probe) is a CLI tool for running compliance checks through flexible playbooks. This package contains the TypeScript type definitions to facilitate playbook authoring and integration.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/benedictjohannes/ComplianceProbe.git"
+    "url": "git+https://github.com/benedictjohannes/crobe.git"
   },
   "author": "Benedict Johannes",
   "license": "MIT",

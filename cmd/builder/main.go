@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/benedictjohannes/ComplianceProbe/internal/configsource"
-	"github.com/benedictjohannes/ComplianceProbe/internal/reportwriter"
-	"github.com/benedictjohannes/ComplianceProbe/internal/transpile"
-	"github.com/benedictjohannes/ComplianceProbe/playbook"
-	"github.com/benedictjohannes/ComplianceProbe/report"
+	"github.com/benedictjohannes/crobe/internal/configsource"
+	"github.com/benedictjohannes/crobe/internal/reportwriter"
+	"github.com/benedictjohannes/crobe/internal/transpile"
+	"github.com/benedictjohannes/crobe/playbook"
+	"github.com/benedictjohannes/crobe/report"
 	"flag"
 	"fmt"
 	"os"
@@ -46,7 +46,7 @@ func main() {
 	// Default: Run Agent Report
 	configPath := configsource.GetConfigSource(flag.Arg(0))
 	if configPath == "" {
-		fmt.Println("❌ Error: No playbook provided. Use 'compliance-probe [path/to/playbook.yaml]'")
+		fmt.Println("❌ Error: No playbook provided. Use 'crobe [path/to/playbook.yaml]'")
 		os.Exit(1)
 	}
 

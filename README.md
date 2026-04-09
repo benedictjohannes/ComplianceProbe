@@ -1,10 +1,10 @@
-# ComplianceProbe 🛡️
+# `crobe`: Compliance Probe 🛡️
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/benedictjohannes/ComplianceProbe/release.yml?style=flat-square)](https://github.com/benedictjohannes/ComplianceProbe/actions) [![Go Reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/benedictjohannes/ComplianceProbe) [![NPM Version](https://img.shields.io/npm/v/compliance-probe.svg?style=flat-square)](https://www.npmjs.com/package/compliance-probe) [![License: MIT](https://img.shields.io/github/license/benedictjohannes/ComplianceProbe?color=yellow&style=flat-square)](https://github.com/benedictjohannes/ComplianceProbe/blob/master/LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/benedictjohannes/crobe/release.yml?style=flat-square)](https://github.com/benedictjohannes/crobe/actions) [![Go Reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/benedictjohannes/crobe) [![NPM Version](https://img.shields.io/npm/v/crobe-sdk.svg?style=flat-square)](https://www.npmjs.com/package/crobe-sdk) [![License: MIT](https://img.shields.io/github/license/benedictjohannes/crobe?color=yellow&style=flat-square)](https://github.com/benedictjohannes/crobe/blob/master/LICENSE)
 
-**ComplianceProbe** is a cross-platform security compliance reporting agent. It executes a series of automated checks defined in a YAML "playbook" to verify system integrity, security configurations, and hardware state.
+**`crobe`** is a cross-platform security compliance reporting agent. It executes a series of automated checks defined in a YAML "playbook" to verify system integrity, security configurations, and hardware state.
 
-Whether you are auditing a desktop for security standards or monitoring server health, ComplianceProbe provides a flexible, scriptable, and reproducible way to generate detailed compliance reports.
+Whether you are auditing a desktop for security standards or monitoring server health, `crobe` provides a flexible, scriptable, and reproducible way to generate detailed compliance reports.
 
 ## ✨ Key Features
 
@@ -19,7 +19,7 @@ Whether you are auditing a desktop for security standards or monitoring server h
 -   **🌐 Remote Capabilities**: [Integrate playbook and compliance result submissions remotely](#remote-features).
 -   **📜 JS Scripting & Logic**: Dynamic script generation and output evaluation using an embedded JavaScript engine ([Goja](https://github.com/dop251/goja)).
     -   **TS Support**: Write complex logic in separate `.js` or `.ts` files and "bake" them into a single portable playbook using the [builder tool](#builder-tool).
-    -   **Type Definitions**: The [TypeScript definitions](./typescript-sdk) for playbook development and report consumption are available (via `npm install compliance-probe`).
+    -   **Type Definitions**: The [TypeScript definitions](./typescript-sdk) for playbook development and report consumption are available (via `npm install crobe-sdk`).
 
 ## 🎯 Use Cases
 
@@ -31,24 +31,24 @@ Whether you are auditing a desktop for security standards or monitoring server h
 
 ## 📦 Installation
 
-Download the binary for your platform from the [releases](https://github.com/benedictjohannes/ComplianceProbe/releases) page:
+Download the binary for your platform from the [releases](https://github.com/benedictjohannes/crobe/releases) page:
 
--   `compliance-probe-linux`
--   `compliance-probe-windows.exe`
--   `compliance-probe-mac-arm`
--   `compliance-probe-mac-intel`
+-   `crobe-linux`
+-   `crobe-windows.exe`
+-   `crobe-mac-arm`
+-   `crobe-mac-intel`
 
 ## 🚀 Quick Start
 
 1.  **Run with the default playbook:**
     Ensure a `playbook.yaml` exists in the current directory and run the probe (replace with your platform binary):
     ```bash
-    ./compliance-probe
+    ./crobe
     ```
 
 2.  **Run with a specific playbook:**
     ```bash
-    ./compliance-probe my-security-audit.yaml
+    ./crobe my-security-audit.yaml
     ```
 
 3.  **View results:**
@@ -72,7 +72,7 @@ The probe can integrate with a central compliance hub:
 
 ## Builder Tool
 
-The **Builder** (`compliance-probe-builder`) is designed for compliance designers and developers to assist in creating and managing complex playbooks.
+The **Builder** (`crobe-builder`) is designed for compliance designers and developers to assist in creating and managing complex playbooks.
 
 -   **Generate Schema**: Create a JSON schema for IDE autocompletion (VS Code, etc).
 -   **Preprocessing Pipeline**: Use `funcFile` to externalize logic into TypeScript files, which are then transpiled and "baked" into a portable playbook for the agent.
@@ -99,7 +99,7 @@ make build
 
 Or build manually:
 ```bash
-go build -o compliance-probe ./cmd/probe
+go build -o crobe ./cmd/probe
 ```
 
 ### Build Builder Binaries
@@ -112,7 +112,7 @@ make build-builder
 
 Or build manually:
 ```bash
-go build -o compliance-probe-builder ./cmd/builder
+go build -o crobe-builder ./cmd/builder
 ```
 
 ### Running Tests

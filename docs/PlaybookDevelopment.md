@@ -1,6 +1,6 @@
 # Playbook Development 🛠️
 
-This guide covers advanced techniques for creating and managing ComplianceProbe playbooks, specifically focusing on the **Builder** workflow and **TypeScript/JavaScript** integration.
+This guide covers advanced techniques for creating and managing *crobe* (Compliance Probe) playbooks, specifically focusing on the **Builder** workflow and **TypeScript/JavaScript** integration.
 
 ---
 
@@ -11,9 +11,9 @@ While you can write simple shell scripts and regex directly in your YAML, comple
 ### 🎭 Raw vs. Baked Playbooks
 
 -   **Raw Playbook**: Used during development. It uses the `funcFile` property to point to external `.ts` or `.js` files. 
-    -   *Compatibility*: Only the `compliance-probe-builder` can read these.
+    -   *Compatibility*: Only the `crobe-builder` can read these.
 -   **Baked Playbook**: A single, portable YAML file where all external scripts have been transpiled, minified, and inlined into the `func` property.
-    -   *Compatibility*: Both the `compliance-probe` (Agent) and the Builder can run these.
+    -   *Compatibility*: Both the `crobe` (Agent) and the Builder can run these.
 
 ### 🚀 Workflow
 
@@ -21,7 +21,7 @@ While you can write simple shell scripts and regex directly in your YAML, comple
 2.  **Develop**: Use TypeScript (`.ts`) for external scripts to get full IDE support, type checking, and linting.
 3.  **Bake**: Run the preprocessor using the Builder:
     ```bash
-    ./compliance-probe-builder --preprocess --input raw-playbook.yaml --output playbook.yaml
+    ./crobe-builder --preprocess --input raw-playbook.yaml --output playbook.yaml
     ```
 4.  **Result**: The builder transpiles TS to JS, minifies the code, and replaces `funcFile` with the inline `func` string.
 
@@ -42,7 +42,7 @@ assertions:
 
 ## 📜 TypeScript Logic & Runtime
 
-ComplianceProbe uses an embedded **[Goja](https://github.com/dop251/goja)** engine for execution. While the runtime operates on JS, the **Builder** leverages `esbuild` to support TypeScript during development.
+`crobe` uses an embedded **[Goja](https://github.com/dop251/goja)** engine for execution. While the runtime operates on JS, the **Builder** leverages `esbuild` to support TypeScript during development.
 
 ### 🛡️ Sandbox Restrictions
 - **No Node.js APIs**: You cannot use `fs`, `path`, `http`, etc.
@@ -56,10 +56,10 @@ ComplianceProbe uses an embedded **[Goja](https://github.com/dop251/goja)** engi
 To help you get started, this repository includes a [`func.d.ts`](../typescript-sdk/func.d.ts) file with all the necessary type definitions. You can use these to ensure your scripts match the expected signatures.
 
 ### Using the Type Definitions
-In your `.ts` files, you use `export default` to define the entry point. Once you have the types installed (`npm install compliance-probe`), you can import them directly:
+In your `.ts` files, you use `export default` to define the entry point. Once you have the types installed (`npm install crobe-sdk`), you can import them directly:
 
 ```typescript
-import type { ScriptContext } from "compliance-probe/func";
+import type { ScriptContext } from "crobe-sdk/func";
 
 /**
  * The default export must be the function signature expected by the agent.
@@ -77,7 +77,7 @@ The agent expects the transpiled file to result in a function. Using `export def
 Generates the shell command to run based on the current environment.
 
 ```typescript
-import type { ScriptContext } from "compliance-probe/func";
+import type { ScriptContext } from "crobe-sdk/func";
 
 export default ({ assertionContext, os, env }: ScriptContext): string => {
   if (os === 'windows') {
@@ -91,7 +91,7 @@ export default ({ assertionContext, os, env }: ScriptContext): string => {
 Determines if a command passed or failed.
 
 ```typescript
-import type { Evaluator } from "compliance-probe/func";
+import type { Evaluator } from "crobe-sdk/func";
 
 export default (stdout: string, stderr: string, context: any): -1 | 0 | 1 => {
   if (stderr.includes("error")) return -1;
@@ -103,7 +103,7 @@ export default (stdout: string, stderr: string, context: any): -1 | 0 | 1 => {
 Extracts specific values from command output to store in the `assertionContext`.
 
 ```typescript
-import type { Gatherer } from "compliance-probe/func";
+import type { Gatherer } from "crobe-sdk/func";
 
 export default (stdout: string, stderr: string, context: any): string => {
   const match = stdout.match(/Version: ([\d.]+)/);
@@ -117,13 +117,13 @@ export default (stdout: string, stderr: string, context: any): string => {
 
 - **Generate Schema**: Create `playbook.schema.json` for VS Code autocompletion.
   ```bash
-  ./compliance-probe-builder --schema > playbook.schema.json
+  ./crobe-builder --schema > playbook.schema.json
   ```
 - **Preprocess**: Transform a development ("raw") playbook into a production-ready ("baked") one.
   ```bash
-  ./compliance-probe-builder --preprocess --input <input> --output <output>
+  ./crobe-builder --preprocess --input <input> --output <output>
   ```
 - **Test Run (Development)**: You can run a raw playbook directly using the builder without baking it first:
   ```bash
-  ./compliance-probe-builder raw-playbook.yaml
+  ./crobe-builder raw-playbook.yaml
   ```

@@ -1,4 +1,4 @@
-module github.com/benedictjohannes/ComplianceProbe
+module github.com/benedictjohannes/crobe
 
 go 1.24
 

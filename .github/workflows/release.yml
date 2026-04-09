@@ -38,14 +38,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            compliance-probe-linux
-            compliance-probe-windows.exe
-            compliance-probe-mac-intel
-            compliance-probe-mac-arm
-            compliance-probe-builder-linux
-            compliance-probe-builder-windows.exe
-            compliance-probe-builder-mac-intel
-            compliance-probe-builder-mac-arm
+            crobe-linux
+            crobe-windows.exe
+            crobe-mac-intel
+            crobe-mac-arm
+            crobe-builder-linux
+            crobe-builder-windows.exe
+            crobe-builder-mac-intel
+            crobe-builder-mac-arm
             playbook.schema.json
           generate_release_notes: true
           draft: false
@@ -62,14 +62,14 @@ jobs:
             Last updated: ${{ github.event.head_commit.timestamp }}
             Commit: ${{ github.sha }}
           files: |
-            compliance-probe-linux
-            compliance-probe-windows.exe
-            compliance-probe-mac-intel
-            compliance-probe-mac-arm
-            compliance-probe-builder-linux
-            compliance-probe-builder-windows.exe
-            compliance-probe-builder-mac-intel
-            compliance-probe-builder-mac-arm
+            crobe-linux
+            crobe-windows.exe
+            crobe-mac-intel
+            crobe-mac-arm
+            crobe-builder-linux
+            crobe-builder-windows.exe
+            crobe-builder-mac-intel
+            crobe-builder-mac-arm
             playbook.schema.json
           prerelease: true
           make_latest: false

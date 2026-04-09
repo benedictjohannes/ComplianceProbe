@@ -1,5 +1,5 @@
 # Binary name
-BINARY_NAME=compliance-probe
+BINARY_NAME=crobe
 
 # Build flags for production (smaller binary)
 LDFLAGS=-s -w
@@ -9,7 +9,7 @@ BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
 
 ## help: Show this help message
 help:
-	@echo "ComplianceProbe Task Runner"
+	@echo "crobe Task Runner"
 	@echo "Usage: make [target]"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
