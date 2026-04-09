@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=../playbook.schema.json
+title: "E2E Test Playbook"
+
+sections:
+  - title: "Transpilation Tests"
+    description:
+      - "Verify different types of TS scripts"
+    assertions:
+      - code: PlainTest
+        title: "Plain Script"
+        description: "Uses a plain script without imports or exports"
+        cmds:
+          - exec:
+              funcFile: "./scripts/plainFunction.ts"
+            exitCodeRules: [{ min: 0, max: 0, result: 1 }]
+        passDescription: "Plain Script passed"
+        failDescription: "Plain Script failed"
+
+      - code: ExportTest
+        title: "Export Script"
+        description: "Uses export default"
+        cmds:
+          - exec:
+              funcFile: "./scripts/exportFunction.ts"
+            exitCodeRules: [{ min: 0, max: 0, result: 1 }]
+        passDescription: "Export Script passed"
+        failDescription: "Export Script failed"
+
+      - code: ImportTypeTest
+        title: "Import Type Script"
+        description: "Uses import type"
+        cmds:
+          - exec:
+              funcFile: "./scripts/exportFunctionWithImportType.ts"
+            exitCodeRules: [{ min: 0, max: 0, result: 1 }]
+        passDescription: "Import Type Script passed"
+        failDescription: "Import Type Script failed"
+
+      - code: JSStateMachineTest
+        title: "JS State Machine"
+        description: "Tests JS state across command stages: generate, increment, and verify"
+        preCmds:
+          - func: |
+              () => {
+                const val = Math.floor(Math.random() * 1000);
+                return `echo ${val} > random_number1.txt`;
+              }
+        cmds:
+          - exec:
+              script: "cat random_number1.txt"
+              gather:
+                - key: "num1"
+                  regex: "(\\d+)"
+            passScore: 0
+          - exec:
+              func: |
+                ({ assertionContext }) => {
+                  const nextVal = parseInt(assertionContext.num1) + 1;
+                  return `echo ${nextVal} > random_number2.txt`;
+                }
+            passScore: 0
+          - exec:
+              script: "cat random_number2.txt"
+              gather:
+                - key: "num2_secret"
+                  func: (stdout, stderr, assertionContext) => Number(stdout)
+                  excludeFromReport: true
+              excludeFromReport: true
+          - exec:
+              script: "cat random_number1.txt && cat random_number2.txt"
+            stdOutRule:
+              func: |
+                (stdout, stderr, assertionContext) => {
+                  const ctxNum1 = Number(assertionContext.num1)
+                  const ctxNum2 = Number(assertionContext.num2_secret)
+                  if (ctxNum2 - ctxNum1 !== 1) return -1
+                  const nums = stdout.trim().split(/\s+/).map(Number);
+                  if (nums.length !== 2) return -1
+                  return nums[0] === ctxNum1 && nums[1] === ctxNum2 ? 1 : -1
+                }
+        minPassingScore: 2
+        postCmds:
+          - script: rm random_number2.txt
+        passDescription: "State machine correctly tracked and incremented the value across stages."
+        failDescription: "State machine failed to verify the incremented value."
+

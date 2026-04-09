@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=../playbook.schema.json
+title: "E2E Report Auditor"
+
+sections:
+  - title: "Verification of E2E Results & Persistence"
+    description:
+      - "Audits artifacts from the previous run and verifies file cleanup"
+    assertions:
+      - code: REPORT_AUDIT
+        title: "Comprehensive Artifact Audit"
+        description: "Verifies file persistence, cleanup, context redaction, and data consistency"
+        preCmds:
+          - script: sleep 1
+        cmds:
+          # 1. Verify existence of temp files from previous run and gather data
+          - exec:
+              script: "cat random_number1.txt"
+              gather:
+                - key: "new_gather_num1"
+                  regex: "(\\d+)"
+          - exec:
+              script: "stat random_number2.txt"
+            exitCodeRules:
+              - min: 1
+                max: 1
+                result: 1
+              - result: -1
+          # 2. Locate the latest report from the reports folder
+          - exec:
+              script: "ls reports/*.report.json"
+              gather:
+                - key: "latest_report_json"
+                  func: |
+                    (stdout) => {
+                      const files = stdout.trim().split("\n");
+                      return files.sort().reverse()[0]; 
+                    }
+
+          # 3. Audit JSON report content: check gathered content
+          - exec:
+              func: |
+                ({ assertionContext }) => `cat ${assertionContext.latest_report_json}`
+            stdOutRule:
+              func: |
+                (stdout, stderr, assertionContext) => {
+                  const report = JSON.parse(stdout);
+                  const smTest = report.assertions.JSStateMachineTest;
+                  
+                  // Verification A: num2_secret must NOT be in the JSON
+                  const isRedacted = !smTest.context.hasOwnProperty('num2_secret');
+                  // Verification B: report's num1 must match what we just gathered
+                  const matchesNum1 = String(smTest.context.num1) === String(assertionContext.new_gather_num1);
+                  
+                  return (isRedacted && matchesNum1) ? 1 : -1;
+                }
+          # 4. Audit log report content: check that excludedFromReport is [REDACTED]
+          - exec:
+              func: | 
+                ({assertionContext}) => {
+                  const latestlog = assertionContext.latest_report_json.replace('.json', '.log');
+                  return `cat ${latestlog}`;
+                }
+            stdOutRule:
+              func: |
+                (stdout, stderr, assertionContext) => {
+                  const marker = '>>>>> COMMAND: cat random_number2.txt <<<<<'  
+                  const entries = stdout.split('\n')
+                  const markerIdx = entries.findIndex(e => e === marker)
+                  if (markerIdx === -1) return -1;
+                  const redactedEntry = entries[markerIdx + 3]
+                  if (!redactedEntry) return -1;
+                  return redactedEntry.includes('[REDACTED]') ? 1 : -1;
+                }
+        postCmds: [{script: "rm random_number1.txt"}]
+        minPassingScore: 5
+        passDescription: "Report audit successful: Redaction enforced and data integrity verified."
+        failDescription: "Report audit failed: Detected data inconsistency or redaction failure."

@@ -57,6 +57,20 @@ test-coverage-report: ## Run go tests and generate HTML coverage report
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
+test-builder: ## Verify builder transpilation and execution using built binaries
+	@echo "Verifying builder with built binaries..."
+	# 1. Preprocess raw playbook to baked version
+	./$(BINARY_NAME)-builder-linux --preprocess --input test-e2e/test.playbook.raw.yaml --output test-e2e/test.playbook.baked.yaml
+	# 2. Run the baked playbook using the probe agent
+	./$(BINARY_NAME)-linux test-e2e/test.playbook.baked.yaml
+	# 3. Test direct execution of raw playbook via builder
+	./$(BINARY_NAME)-builder-linux test-e2e/test.playbook.raw.yaml
+	# 4. Deep Audit of generated reports and file persistence
+	./$(BINARY_NAME)-linux test-e2e/test.playbook.reportevaluate.yaml
+	@echo "Builder E2E verification passed!"
+
+
 ## clean: Remove all generated binaries
 clean: ## Remove generated binaries
 	rm -f $(BINARY_NAME)-*
+	rm -rf reports

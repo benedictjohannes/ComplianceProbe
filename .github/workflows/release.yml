@@ -30,6 +30,9 @@ jobs:
           make build
           make build-builder
 
+      - name: Run E2E Builder Tests
+        run: make test-builder
+
       - name: Generate Schema
         run: make schema
 
