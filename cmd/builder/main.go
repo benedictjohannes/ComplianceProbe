@@ -11,8 +11,6 @@ import (
 	"github.com/benedictjohannes/crobe/internal/transpile"
 	"github.com/benedictjohannes/crobe/playbook"
 	"github.com/benedictjohannes/crobe/report"
-
-	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -64,10 +62,9 @@ func main() {
 	}
 
 	// Transpile in-memory for direct run
-	for i := range config.Sections {
-		for j := range config.Sections[i].Assertions {
-			processAssertion(&config.Sections[i].Assertions[j], filepath.Dir(configPath))
-		}
+	if err := transpile.Preprocess(config, filepath.Dir(configPath)); err != nil {
+		fmt.Printf("❌ Preprocessing Error: %v\n", err)
+		os.Exit(1)
 	}
 
 	result := report.GenerateReport(*config)
@@ -84,96 +81,9 @@ func main() {
 // Preprocess Logic
 
 func runPreprocess(inputPath string, outputPath string) {
-	config, _, err := configsource.LoadConfig(inputPath)
-	if err != nil {
-		fmt.Printf("❌ Failed to load input: %v\n", err)
+	if err := transpile.BakeFile(inputPath, outputPath); err != nil {
+		fmt.Printf("❌ Preprocessing Failed: %v\n", err)
 		os.Exit(1)
 	}
-
-	// Walk and transpile
-	for i := range config.Sections {
-		for j := range config.Sections[i].Assertions {
-			a := &config.Sections[i].Assertions[j]
-			processAssertion(a, filepath.Dir(inputPath))
-		}
-	}
-
-	// Validate
-	if err := playbook.ValidateConfig(*config, false); err != nil {
-		fmt.Printf("❌ Validation Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Save "baked" playbook
-	outData, err := yaml.Marshal(config)
-	if err != nil {
-		fmt.Printf("❌ Failed to marshal YAML: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = os.WriteFile(outputPath, outData, 0644)
-	if err != nil {
-		fmt.Printf("❌ Failed to write output: %v\n", err)
-		os.Exit(1)
-	}
-
 	fmt.Printf("🚀 Preprocessing Complete! Baked playbook saved to: %s\n", outputPath)
-}
-
-func processAssertion(a *playbook.Assertion, baseDir string) {
-	for i := range a.PreCmds {
-		processExec(&a.PreCmds[i], baseDir)
-	}
-	for i := range a.Cmds {
-		processExec(&a.Cmds[i].Exec, baseDir)
-		processEvalRule(&a.Cmds[i].StdOutRule, baseDir)
-		processEvalRule(&a.Cmds[i].StdErrRule, baseDir)
-	}
-	for i := range a.PostCmds {
-		processExec(&a.PostCmds[i], baseDir)
-	}
-}
-
-func processExec(e *playbook.Exec, baseDir string) {
-	if e.ShellFuncFile != "" {
-		code, err := transpile.Transpile(filepath.Join(baseDir, e.ShellFuncFile))
-		if err != nil {
-			fmt.Printf("❌ Transpilation Error (%s): %v\n", e.ShellFuncFile, err)
-			os.Exit(1)
-		}
-		e.ShellFunc = code
-		e.ShellFuncFile = ""
-	}
-	if e.FuncFile != "" {
-		code, err := transpile.Transpile(filepath.Join(baseDir, e.FuncFile))
-		if err != nil {
-			fmt.Printf("❌ Transpilation Error (%s): %v\n", e.FuncFile, err)
-			os.Exit(1)
-		}
-		e.Func = code
-		e.FuncFile = ""
-	}
-	for i := range e.Gather {
-		if e.Gather[i].FuncFile != "" {
-			code, err := transpile.Transpile(filepath.Join(baseDir, e.Gather[i].FuncFile))
-			if err != nil {
-				fmt.Printf("❌ Transpilation Error (%s): %v\n", e.Gather[i].FuncFile, err)
-				os.Exit(1)
-			}
-			e.Gather[i].Func = code
-			e.Gather[i].FuncFile = ""
-		}
-	}
-}
-
-func processEvalRule(r *playbook.EvaluationRule, baseDir string) {
-	if r.FuncFile != "" {
-		code, err := transpile.Transpile(filepath.Join(baseDir, r.FuncFile))
-		if err != nil {
-			fmt.Printf("❌ Transpilation Error (%s): %v\n", r.FuncFile, err)
-			os.Exit(1)
-		}
-		r.Func = code
-		r.FuncFile = ""
-	}
 }
