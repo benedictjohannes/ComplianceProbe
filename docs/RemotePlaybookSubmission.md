@@ -10,12 +10,13 @@ You can load a playbook directly from a secure URL instead of a local file. This
 Pass the HTTPS URL as the first argument to the probe:
 
 ```bash
-./crobe https://config.internal.company.com/playbooks/security-v2.yaml
+./crobe https://config.internal.company.com/playbooks/security-compliance
 ```
 
 ### Notes
 - **HTTPS Only**: For security reasons, loading playbooks over insecure `http://` is strictly prohibited and will result in an error.
 - **Timeout**: The probe has a default timeout of 60 seconds for fetching remote configurations.
+- **YAML/JSON**: The probe can fetch remote playbooks in either YAML (default) or JSON format. When crobe sees `Content-Type: application/json` header, it would parse the response exclusively as JSON.
 
 ### TypeScript Definitions for Playbooks
 If you are dynamically generating playbooks (e.g., using a web application or a server-side script), you can use the TypeScript definitions provided in the [`typescript-sdk/playbook.d.ts`](../typescript-sdk/playbook.d.ts) file.
