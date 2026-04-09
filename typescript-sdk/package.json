@@ -1,6 +1,6 @@
 {
   "name": "crobe-sdk",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "Crobe (Compliance Probe) is a CLI tool for running compliance checks through flexible playbooks. This package contains the TypeScript type definitions to facilitate playbook authoring and integration.",
   "repository": {
     "type": "git",
