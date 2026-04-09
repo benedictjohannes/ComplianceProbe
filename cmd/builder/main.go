@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/benedictjohannes/crobe/internal/configsource"
+	"github.com/benedictjohannes/crobe/internal/headerflags"
 	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/internal/transpile"
 	"github.com/benedictjohannes/crobe/playbook"
@@ -19,8 +20,11 @@ func main() {
 	inputFlag := flag.String("input", "", "Input raw YAML file (for preprocess)")
 	outputFlag := flag.String("output", "playbook.yaml", "Output baked YAML file (for preprocess)")
 	folderFlag := flag.String("folder", "", "Folder to write reports to (default \"reports\")")
+	var headersFlags headerflags.HeaderFlags
+	flag.Var(&headersFlags, "H", "Custom header for remote playbook fetching (eg: 'Authorization: Bearer <TOKEN>'). Specify multiple times for each header you want to add.")
 	flag.Parse()
 
+	headers := headersFlags.ToMap()
 	reportwriter.DefaultReportsDir = *folderFlag
 
 	if *schemaFlag {
@@ -49,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, _, err := configsource.LoadConfig(configPath)
+	config, _, err := configsource.LoadConfig(configPath, headers)
 	if err != nil {
 		fmt.Printf("❌ Failed to load playbook %s: %v\n", configPath, err)
 		os.Exit(1)

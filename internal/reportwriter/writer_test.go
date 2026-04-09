@@ -138,6 +138,37 @@ func TestDispatchReport(t *testing.T) {
 			t.Fatalf("DispatchReport to HTTPS failed: %v", err)
 		}
 	})
+
+	t.Run("https override by folder flag", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "dispatch-override-test-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		oldDir := DefaultReportsDir
+		DefaultReportsDir = tmpDir
+		defer func() { DefaultReportsDir = oldDir }()
+
+		// Config suggests HTTPS, but flag suggests folder
+		config := &playbook.Playbook{
+			ReportDestination: playbook.ReportDestinationHTTPS,
+			ReportDestinationHTTPS: &playbook.ReportDestinationConfig{
+				URL: "https://should-not-be-called.example.com",
+			},
+		}
+
+		err = DispatchReport(config, res)
+		if err != nil {
+			t.Fatalf("DispatchReport with override failed: %v", err)
+		}
+
+		// Verify it went to the folder instead of attempting HTTPS
+		files, _ := os.ReadDir(tmpDir)
+		if len(files) != 3 {
+			t.Errorf("Expected 3 files in reports directory (override), got %d", len(files))
+		}
+	})
 }
 
 func TestWriteToFolder(t *testing.T) {

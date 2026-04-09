@@ -21,7 +21,7 @@ func TestPreprocessWithE2EAssets(t *testing.T) {
 	rawPlaybookPath := filepath.Join(baseDir, "test.playbook.raw.yaml")
 	
 	// 1. Load the raw playbook
-	config, _, err := configsource.LoadConfig(rawPlaybookPath)
+	config, _, err := configsource.LoadConfig(rawPlaybookPath, nil)
 	if err != nil {
 		t.Fatalf("failed to load raw playbook: %v", err)
 	}
@@ -311,6 +311,12 @@ sections:
 	err = BakeFile(inputPath, tmpDir)
 	if err == nil || !strings.Contains(err.Error(), "failed to write output") {
 		t.Errorf("expected write error, got: %v", err)
+	}
+
+	// 5. Remote URL error
+	err = BakeFile("https://example.com/playbook.yaml", filepath.Join(tmpDir, "out.yaml"))
+	if err == nil || !strings.Contains(err.Error(), "baking remote playbooks is not supported") {
+		t.Errorf("expected remote URL error, got: %v", err)
 	}
 }
 

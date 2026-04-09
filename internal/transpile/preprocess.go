@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/benedictjohannes/crobe/internal/configsource"
 	"github.com/benedictjohannes/crobe/playbook"
@@ -13,7 +14,11 @@ import (
 // BakeFile loads a raw playbook from inputPath, transpiles all external scripts,
 // validates the result, and saves it to outputPath.
 func BakeFile(inputPath, outputPath string) error {
-	config, _, err := configsource.LoadConfig(inputPath)
+	if strings.HasPrefix(inputPath, "https://") {
+		return fmt.Errorf("baking remote playbooks is not supported as relative paths to external script files would break")
+	}
+
+	config, _, err := configsource.LoadConfig(inputPath, nil)
 	if err != nil {
 		return fmt.Errorf("failed to load input: %w", err)
 	}

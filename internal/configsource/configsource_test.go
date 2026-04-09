@@ -10,7 +10,7 @@ import (
 )
 
 func TestLoadConfig_Insecure(t *testing.T) {
-	_, _, err := LoadConfig("http://example.com/playbook.yaml")
+	_, _, err := LoadConfig("http://example.com/playbook.yaml", nil)
 	if err == nil || !strings.Contains(err.Error(), "insecure HTTP") {
 		t.Errorf("Expected error for insecure HTTP")
 	}
@@ -32,7 +32,7 @@ func TestLoadConfig_LocalFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	config, data, err := LoadConfig(tmpfile.Name())
+	config, data, err := LoadConfig(tmpfile.Name(), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -44,7 +44,7 @@ func TestLoadConfig_LocalFile(t *testing.T) {
 	}
 
 	// 2. Not found
-	_, _, err = LoadConfig("non-existent-file.yaml")
+	_, _, err = LoadConfig("non-existent-file.yaml", nil)
 	if err == nil {
 		t.Errorf("Expected error for non-existent file")
 	}
@@ -60,7 +60,7 @@ func TestLoadConfig_LocalFile(t *testing.T) {
 	}
 	tmpfileInvalid.Close()
 
-	_, _, err = LoadConfig(tmpfileInvalid.Name())
+	_, _, err = LoadConfig(tmpfileInvalid.Name(), nil)
 	if err == nil || !strings.Contains(err.Error(), "failed to parse YAML") {
 		t.Errorf("Expected parsing error, got %v", err)
 	}
@@ -68,7 +68,7 @@ func TestLoadConfig_LocalFile(t *testing.T) {
 	// 4. Directory
 	tmpDir, _ := os.MkdirTemp("", "testdir")
 	defer os.RemoveAll(tmpDir)
-	_, _, err = LoadConfig(tmpDir)
+	_, _, err = LoadConfig(tmpDir, nil)
 	if err == nil {
 		t.Errorf("Expected error for directory path")
 	}
@@ -83,7 +83,7 @@ func TestFetchHttpsPlaybook(t *testing.T) {
 	}))
 	defer server.Close()
 
-	data, contentType, err := fetchHttpsPlaybook(server.URL)
+	data, contentType, err := fetchHttpsPlaybook(server.URL, nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -100,20 +100,48 @@ func TestFetchHttpsPlaybook(t *testing.T) {
 	}))
 	defer errServer.Close()
 
-	_, _, err = fetchHttpsPlaybook(errServer.URL)
+	_, _, err = fetchHttpsPlaybook(errServer.URL, nil)
 	if err == nil || !strings.Contains(err.Error(), "status 404") {
 		t.Errorf("Expected 404 error, got %v", err)
 	}
 
 	// Test connection error
-	_, _, err = fetchHttpsPlaybook("http://localhost:1")
+	_, _, err = fetchHttpsPlaybook("http://localhost:1", nil)
 	if err == nil {
 		t.Errorf("Expected connection error")
 	}
 }
 
+func TestFetchHttpsPlaybook_WithHeaders(t *testing.T) {
+	content := []byte("secret content")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-API-Key") != "secret" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write(content)
+	}))
+	defer server.Close()
+
+	headers := map[string]string{"X-API-Key": "secret"}
+	data, _, err := fetchHttpsPlaybook(server.URL, headers)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if string(data) != string(content) {
+		t.Errorf("Expected %s, got %s", string(content), string(data))
+	}
+
+	// Test unauthorized
+	_, _, err = fetchHttpsPlaybook(server.URL, nil)
+	if err == nil || !strings.Contains(err.Error(), "status 401") {
+		t.Errorf("Expected 401 error, got %v", err)
+	}
+}
+
 func TestFetchHttpsPlaybook_InvalidUrl(t *testing.T) {
-	_, _, err := fetchHttpsPlaybook(":%: invalid-url")
+	_, _, err := fetchHttpsPlaybook(":%: invalid-url", nil)
 	if err == nil {
 		t.Errorf("Expected error for invalid URL")
 	}
@@ -131,7 +159,7 @@ func TestLoadConfig_HttpsMock(t *testing.T) {
 
 	// Actually, we can use a small trick: test with a URL that starts with https://
 	// but is invalid, just to see if it reaches fetchHttpsPlaybook.
-	_, _, err := LoadConfig("https://invalid.example.com/playbook.yaml")
+	_, _, err := LoadConfig("https://invalid.example.com/playbook.yaml", nil)
 	if err == nil {
 		t.Errorf("Expected error for invalid HTTPS URL")
 	}
@@ -155,7 +183,7 @@ func TestLoadConfig_Json(t *testing.T) {
 	tmpfile.Close()
 
 	// Local file uses JSON parser because of .json extension
-	config, _, err := LoadConfig(tmpfile.Name())
+	config, _, err := LoadConfig(tmpfile.Name(), nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -177,7 +205,7 @@ func TestLoadConfig_LocalJsonError(t *testing.T) {
 	}
 	tmpfile.Close()
 
-	_, _, err = LoadConfig(tmpfile.Name())
+	_, _, err = LoadConfig(tmpfile.Name(), nil)
 	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
 		t.Errorf("Expected JSON parse error, got %v", err)
 	}
@@ -196,7 +224,7 @@ func TestLoadConfig_HttpsJson(t *testing.T) {
 	// Use fetchHttpsPlaybook directly to test the fetching logic
 	// Or we can mock the fetch function if we want to test LoadConfig's logic.
 	// But let's just test that fetchHttpsPlaybook returns the correct content-type.
-	data, contentType, err := fetchHttpsPlaybook(server.URL)
+	data, contentType, err := fetchHttpsPlaybook(server.URL, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +262,7 @@ func TestLoadConfig_HttpsTls(t *testing.T) {
 	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	defer func() { transport.TLSClientConfig = oldTLSConfig }()
 
-	config, data, err := LoadConfig(server.URL)
+	config, data, err := LoadConfig(server.URL, nil)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -255,7 +283,7 @@ func TestLoadConfig_HttpsTls(t *testing.T) {
 	}))
 	defer errorServer.Close()
 
-	_, _, err = LoadConfig(errorServer.URL)
+	_, _, err = LoadConfig(errorServer.URL, nil)
 	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
 		t.Errorf("Expected JSON parse error, got %v", err)
 	}
@@ -280,7 +308,7 @@ func TestFetchHttpsPlaybook_ReadError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, _, err := fetchHttpsPlaybook(server.URL)
+	_, _, err := fetchHttpsPlaybook(server.URL, nil)
 	if err == nil {
 		t.Error("Expected read error")
 	}

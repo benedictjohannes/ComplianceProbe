@@ -15,7 +15,7 @@ import (
 )
 
 // LoadConfig loads the playbook from either a local file or an HTTPS URL.
-func LoadConfig(path string) (*playbook.Playbook, []byte, error) {
+func LoadConfig(path string, headers map[string]string) (*playbook.Playbook, []byte, error) {
 	var data []byte
 	var contentType string
 	var err error
@@ -25,7 +25,7 @@ func LoadConfig(path string) (*playbook.Playbook, []byte, error) {
 	}
 	isHttps := strings.HasPrefix(path, "https://")
 	if isHttps {
-		data, contentType, err = fetchHttpsPlaybook(path)
+		data, contentType, err = fetchHttpsPlaybook(path, headers)
 	} else {
 		data, err = os.ReadFile(path)
 	}
@@ -53,12 +53,21 @@ func LoadConfig(path string) (*playbook.Playbook, []byte, error) {
 	return &config, data, nil
 }
 
-func fetchHttpsPlaybook(url string) ([]byte, string, error) {
+func fetchHttpsPlaybook(url string, headers map[string]string) ([]byte, string, error) {
 	client := &http.Client{
 		Timeout: 60 * time.Second,
 	}
 
-	resp, err := client.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to fetch remote playbook: %w", err)
 	}
