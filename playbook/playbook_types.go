@@ -62,6 +62,7 @@ type Exec struct {
 	FuncFile            string       `yaml:"funcFile,omitempty" json:"funcFile,omitempty" jsonschema:"description=Path to JS/TS file. BUILDER ONLY: using this in real playbook will cause error."`
 	Gather              []GatherSpec `yaml:"gather,omitempty" json:"gather,omitempty" jsonschema:"description=Data extraction specs"`
 	ExcludeFromReport   bool         `yaml:"excludeFromReport,omitempty" json:"excludeFromReport,omitempty" jsonschema:"description=Hide stdout/stderr results from log and markdown report"`
+	RequireElevation    bool         `yaml:"requireElevation,omitempty" json:"requireElevation,omitempty" jsonschema:"description=Require elevated (sudo/admin) permissions to run this command"`
 }
 
 type EvaluationRule struct {
