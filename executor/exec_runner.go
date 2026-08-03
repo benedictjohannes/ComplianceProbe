@@ -2,6 +2,7 @@ package executor
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,12 +19,12 @@ type ExecutionRequest struct {
 }
 
 type ExecCmdRunner interface {
-	Run(cmd ExecutionRequest) (ExecutionResult, error)
+	Run(ctx context.Context, cmd ExecutionRequest) (ExecutionResult, error)
 }
 
 type localExecutionRunnerT struct{}
 
-var localExecutionRunner localExecutionRunnerT
+var LocalExecutionRunner ExecCmdRunner = localExecutionRunnerT{}
 var elevatedExecutionRunner ExecCmdRunner
 
 func SetElevatedExecutionRunner(r ExecCmdRunner) {
@@ -34,7 +35,7 @@ func GetElevatedExecutionRunner() ExecCmdRunner {
 	return elevatedExecutionRunner
 }
 
-func (l localExecutionRunnerT) Run(c ExecutionRequest) (ExecutionResult, error) {
+func (l localExecutionRunnerT) Run(ctx context.Context, c ExecutionRequest) (ExecutionResult, error) {
 	var name string
 	var args []string
 
@@ -118,8 +119,10 @@ func (l localExecutionRunnerT) Run(c ExecutionRequest) (ExecutionResult, error) 
 		defer os.Remove(tmpFile)
 	}
 
-	cmd := exec.Command(name, args...)
+	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Env = append(os.Environ(), "TERM=dumb", "NO_COLOR=1", "LANG=en_US.UTF-8")
+	cmd.WaitDelay = 200 * time.Millisecond
+	prepareCmdCtx(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

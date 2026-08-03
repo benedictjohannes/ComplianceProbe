@@ -1,15 +1,17 @@
 package executor
 
 import (
+	"context"
 	"os/exec"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/benedictjohannes/crobe/playbook"
 )
 
 func wrapRunCmd(script string, shell string, extension string) ExecutionResult {
-	res, _ := localExecutionRunner.Run(ExecutionRequest{
+	res, _ := LocalExecutionRunner.Run(context.Background(), ExecutionRequest{
 		Script:    script,
 		Shell:     shell,
 		Extension: extension,
@@ -131,14 +133,14 @@ type mockElevatedRunner struct {
 	cmd    ExecutionRequest
 }
 
-func (m *mockElevatedRunner) Run(cmd ExecutionRequest) (ExecutionResult, error) {
+func (m *mockElevatedRunner) Run(ctx context.Context, cmd ExecutionRequest) (ExecutionResult, error) {
 	m.called = true
 	m.cmd = cmd
 	return ExecutionResult{Stdout: "elevated stdout", Success: true}, nil
 }
 
 func TestElevatedRunner(t *testing.T) {
-	context := make(map[string]interface{})
+	contextMap := make(map[string]interface{})
 
 	// 1. RequireElevation = true without elevated runner should fail
 	eMissing := &playbook.Exec{
@@ -146,7 +148,7 @@ func TestElevatedRunner(t *testing.T) {
 		RequireElevation: true,
 	}
 	SetElevatedExecutionRunner(nil)
-	_, err := RunExec(eMissing, context)
+	_, err := RunExec(context.Background(), eMissing, contextMap)
 	if err == nil {
 		t.Error("RunExec with RequireElevation=true and nil elevatedRunner should return error")
 	} else if err.Error() != "elevated runner required but not configured" {
@@ -163,7 +165,7 @@ func TestElevatedRunner(t *testing.T) {
 		Shell:            "bash",
 		RequireElevation: true,
 	}
-	res, err := RunExec(eElevated, context)
+	res, err := RunExec(context.Background(), eElevated, contextMap)
 	if err != nil {
 		t.Fatalf("RunExec elevated error: %v", err)
 	}
@@ -180,8 +182,27 @@ func TestElevatedRunner(t *testing.T) {
 	}
 
 	// 4. localRunner empty command with shell "!"
-	emptyRes, err := localExecutionRunner.Run(ExecutionRequest{Script: "", Shell: "!"})
+	emptyRes, err := LocalExecutionRunner.Run(context.Background(), ExecutionRequest{Script: "", Shell: "!"})
 	if err != nil || !emptyRes.Success {
 		t.Errorf("localRunner empty direct command failed: res=%+v, err=%v", emptyRes, err)
+	}
+}
+
+func TestLocalExecutionRunner_ContextCancel(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	start := time.Now()
+	res, err := LocalExecutionRunner.Run(ctx, ExecutionRequest{
+		Script: "sleep 5",
+		Shell:  "bash",
+	})
+	duration := time.Since(start)
+
+	if duration > 2*time.Second {
+		t.Errorf("Execution took %v; wanted cancellation under 1s", duration)
+	}
+	if res.Success {
+		t.Errorf("Cancelled process returned success: %+v, err: %v", res, err)
 	}
 }

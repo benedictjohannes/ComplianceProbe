@@ -1,6 +1,7 @@
 package director
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -15,7 +16,10 @@ var (
 	goos    = runtime.GOOS
 )
 
-func Run(config playbook.Playbook) executor.ExecutionTrace {
+func Run(ctx context.Context, config playbook.Playbook) executor.ExecutionTrace {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	now := time.Now()
 
 	osName := goos
@@ -47,7 +51,7 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 
 		for _, assertion := range section.Assertions {
 			start := time.Now()
-			context := make(map[string]interface{})
+			contextMap := make(map[string]interface{})
 			score := 0
 
 			assCtx := executor.AssertionContext{
@@ -57,7 +61,7 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 
 			// 1. Pre-Commands
 			for _, exec := range assertion.PreCmds {
-				res, err := runExec(&exec, context)
+				res, err := runExec(ctx, &exec, contextMap)
 				assCtx.PreCmdLogs = append(assCtx.PreCmdLogs, executor.CommandLog{
 					Exec:   exec,
 					Result: res,
@@ -71,7 +75,7 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 			// 2. Main Commands
 			var outputs []string
 			for _, cmd := range assertion.Cmds {
-				res, err := runExec(&cmd.Exec, context)
+				res, err := runExec(ctx, &cmd.Exec, contextMap)
 				assCtx.CmdLogs = append(assCtx.CmdLogs, executor.CommandLog{
 					Exec:   cmd.Exec,
 					Result: res,
@@ -125,13 +129,13 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 				}
 
 				if cmd.StdOutRule.Regex != "" || cmd.StdOutRule.Func != "" {
-					verdict, _ := executor.EvaluateRule(cmd.StdOutRule, res, context)
+					verdict, _ := executor.EvaluateRule(cmd.StdOutRule, res, contextMap)
 					if verdict != 0 {
 						result = verdict
 					}
 				}
 				if cmd.StdErrRule.Regex != "" || cmd.StdErrRule.Func != "" {
-					verdict, _ := executor.EvaluateRule(cmd.StdErrRule, res, context)
+					verdict, _ := executor.EvaluateRule(cmd.StdErrRule, res, contextMap)
 					if verdict != 0 {
 						result = verdict
 					}
@@ -148,7 +152,7 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 
 			// 3. Post-Commands
 			for _, exec := range assertion.PostCmds {
-				res, err := runExec(&exec, context)
+				res, err := runExec(ctx, &exec, contextMap)
 				assCtx.PostCmdLogs = append(assCtx.PostCmdLogs, executor.CommandLog{
 					Exec:   exec,
 					Result: res,
@@ -196,7 +200,7 @@ func Run(config playbook.Playbook) executor.ExecutionTrace {
 				}
 			}
 
-			for k, v := range context {
+			for k, v := range contextMap {
 				if !excludedKeys[k] {
 					assCtx.Context[k] = v
 				}

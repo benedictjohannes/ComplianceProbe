@@ -1,6 +1,7 @@
 package director
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -40,7 +41,7 @@ func TestDirectorScoring(t *testing.T) {
 
 	// Mock execution: first succeeds, second fails
 	callIdx := 0
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		callIdx++
 		if callIdx == 1 {
 			return executor.ExecutionResult{ExitCode: 0, Success: true, Stdout: "ok"}, nil
@@ -48,7 +49,7 @@ func TestDirectorScoring(t *testing.T) {
 		return executor.ExecutionResult{ExitCode: 1, Success: false, Stdout: "fail"}, nil
 	}
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	
 	ass := trace.Sections[0].Assertions[0]
 	if ass.Passed {
@@ -59,11 +60,11 @@ func TestDirectorScoring(t *testing.T) {
 	}
 
 	// Now try a passing case
-	mockExecPass := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExecPass := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
 	}
 	runExec = mockExecPass
-	trace2 := Run(config)
+	trace2 := Run(context.Background(), config)
 	if !trace2.Sections[0].Assertions[0].Passed {
 		t.Errorf("Assertion failed with score %d; expected pass (min 2)", trace2.Sections[0].Assertions[0].Score)
 	}
@@ -106,7 +107,7 @@ func TestExcludeFromReport(t *testing.T) {
 		},
 	}
 
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		out := "sensitive_data"
 		res := executor.ExecutionResult{Stdout: out, Success: true, ExitCode: 0}
 		for _, g := range e.Gather {
@@ -116,7 +117,7 @@ func TestExcludeFromReport(t *testing.T) {
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 
 	ass := trace.Sections[0].Assertions[0]
 	if _, exists := ass.Context["sensitive"]; exists {
@@ -166,7 +167,7 @@ func TestDirector_Advanced(t *testing.T) {
 		},
 	}
 
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		if e.Script == "pre-cmd" {
 			context["pre"] = "pre-val"
 			return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
@@ -178,7 +179,7 @@ func TestDirector_Advanced(t *testing.T) {
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	
 	ass := trace.Sections[0].Assertions[0]
 	if ass.Context["pre"] != "pre-val" {
@@ -211,7 +212,7 @@ func TestDirector_ErrorCases(t *testing.T) {
 		},
 	}
 
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		if e.Script == "pre-fail" || e.Script == "post-fail" {
 			return executor.ExecutionResult{}, fmt.Errorf("error in command")
 		}
@@ -222,7 +223,7 @@ func TestDirector_ErrorCases(t *testing.T) {
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	ass := trace.Sections[0].Assertions[0]
 	if ass.Score != -1 {
 		t.Errorf("Score = %d; want -1 (from main error)", ass.Score)
@@ -248,12 +249,12 @@ func TestDirector_EnvUsage(t *testing.T) {
 			},
 		},
 	}
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		return executor.ExecutionResult{Stdout: "ok", Stderr: "some error"}, nil
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	
 	if trace.Username != "testuser" {
 		t.Errorf("Username = %s; want testuser", trace.Username)
@@ -282,7 +283,7 @@ func TestDirector_DefaultExitCode(t *testing.T) {
 		},
 	}
 
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		if e.Script == "ok" {
 			return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
 		}
@@ -290,7 +291,7 @@ func TestDirector_DefaultExitCode(t *testing.T) {
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	
 	if !trace.Sections[0].Assertions[0].Passed {
 		t.Errorf("E_PASS should have passed")
@@ -344,7 +345,7 @@ func TestDirector_CoverageBoost(t *testing.T) {
 		},
 	}
 
-	mockExec := func(e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
 		if e.Script == "pre-gather" {
 			context["pre_secret"] = "pre-secret-val"
 			return executor.ExecutionResult{Success: true}, nil
@@ -373,7 +374,7 @@ func TestDirector_CoverageBoost(t *testing.T) {
 	}
 
 	runExec = mockExec
-	trace := Run(config)
+	trace := Run(context.Background(), config)
 	
 	if trace.OS != "mac" {
 		t.Errorf("OS = %s; want mac", trace.OS)

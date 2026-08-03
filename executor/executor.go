@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,7 +14,7 @@ import (
 	"github.com/dop251/goja"
 )
 
-type RunExecer func(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error)
+type RunExecer func(ctx context.Context, e *playbook.Exec, contextMap map[string]interface{}) (ExecutionResult, error)
 
 type ExecutionResult struct {
 	Stdout   string
@@ -22,12 +23,16 @@ type ExecutionResult struct {
 	Success  bool
 }
 
-func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult, error) {
+func RunExec(ctx context.Context, e *playbook.Exec, contextMap map[string]interface{}) (ExecutionResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	script := e.Script
 
 	// If Func is provided, it wins and generates the script
 	if e.Func != "" {
-		jsScript, err := RunJS(e.Func, context)
+		jsScript, err := RunJS(e.Func, contextMap)
 		if err != nil {
 			return ExecutionResult{}, fmt.Errorf("JS error in Exec.Func: %v", err)
 		}
@@ -44,7 +49,7 @@ func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult,
 
 	shell := e.Shell
 	if e.ShellFunc != "" {
-		jsShell, err := RunJS(e.ShellFunc, context)
+		jsShell, err := RunJS(e.ShellFunc, contextMap)
 		if err != nil {
 			return ExecutionResult{}, fmt.Errorf("JS error in Exec.ShellFunc: %v", err)
 		}
@@ -65,9 +70,9 @@ func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult,
 		if elevatedExecutionRunner == nil {
 			return ExecutionResult{}, fmt.Errorf("elevated runner required but not configured")
 		}
-		res, err = elevatedExecutionRunner.Run(req)
+		res, err = elevatedExecutionRunner.Run(ctx, req)
 	} else {
-		res, err = localExecutionRunner.Run(req)
+		res, err = LocalExecutionRunner.Run(ctx, req)
 	}
 	if err != nil {
 		return res, err
@@ -75,11 +80,11 @@ func RunExec(e *playbook.Exec, context map[string]interface{}) (ExecutionResult,
 
 	// Handle Gathering
 	for _, g := range e.Gather {
-		val, err := PerformGather(g, res, context)
+		val, err := PerformGather(g, res, contextMap)
 		if err != nil {
 			return res, fmt.Errorf("gather error for key %s: %v", g.Key, err)
 		}
-		context[g.Key] = val
+		contextMap[g.Key] = val
 	}
 
 	return res, nil

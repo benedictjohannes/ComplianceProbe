@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/benedictjohannes/crobe/director"
 	"github.com/benedictjohannes/crobe/internal/configsource"
+	"github.com/benedictjohannes/crobe/internal/elevation"
 	"github.com/benedictjohannes/crobe/internal/headerflags"
 	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/internal/transpile"
@@ -26,11 +28,20 @@ func run(args []string) int {
 	inputFlag := flags.String("input", "", "Input raw YAML file (for preprocess)")
 	outputFlag := flags.String("output", "playbook.yaml", "Output baked YAML file (for preprocess)")
 	folderFlag := flags.String("folder", "", "Folder to write reports to (default \"reports\")")
+	workerFlag := flags.String("worker", "", "Run in elevated worker mode connected to socket URI")
 	var headersFlags headerflags.HeaderFlags
 	flags.Var(&headersFlags, "H", "Custom header for remote playbook fetching (eg: 'Authorization: Bearer <TOKEN>'). Specify multiple times for each header you want to add.")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
+	}
+
+	if *workerFlag != "" {
+		if err := elevation.RunWorker(*workerFlag); err != nil {
+			fmt.Printf("❌ Worker Error: %v\n", err)
+			return 1
+		}
+		return 0
 	}
 
 	headers := headersFlags.ToMap()
@@ -79,7 +90,14 @@ func run(args []string) int {
 		return 1
 	}
 
-	trace := director.Run(*config)
+	cleanup, err := elevation.SetupElevation(config)
+	if err != nil {
+		fmt.Printf("❌ Elevation Setup Error: %v\n", err)
+		return 1
+	}
+	defer cleanup()
+
+	trace := director.Run(context.Background(), *config)
 	result := report.GenerateReport(trace)
 	if err := reportwriter.DispatchReport(config, result); err != nil {
 		fmt.Printf("❌ Reporting Error: %v\n", err)

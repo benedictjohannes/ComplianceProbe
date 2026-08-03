@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/benedictjohannes/crobe/playbook"
@@ -179,11 +180,11 @@ func TestRunJS(t *testing.T) {
 }
 
 func TestRunExec(t *testing.T) {
-	context := make(map[string]interface{})
+	contextMap := make(map[string]interface{})
 
 	// 1. Simple Script
 	e := &playbook.Exec{Script: "echo hello world"}
-	res, err := RunExec(e, context)
+	res, err := RunExec(context.Background(), e, contextMap)
 	if err != nil {
 		t.Fatalf("RunExec(simple) error: %v", err)
 	}
@@ -193,7 +194,7 @@ func TestRunExec(t *testing.T) {
 
 	// 2. JS Func generates script
 	e2 := &playbook.Exec{Func: "() => 'echo js script'"}
-	res, err = RunExec(e2, context)
+	res, err = RunExec(context.Background(), e2, contextMap)
 	if err != nil {
 		t.Fatalf("RunExec(js-func) error: %v", err)
 	}
@@ -208,31 +209,31 @@ func TestRunExec(t *testing.T) {
 			{Key: "test_key", Regex: "(\\d+)"},
 		},
 	}
-	res, err = RunExec(e3, context)
+	res, err = RunExec(context.Background(), e3, contextMap)
 	if err != nil {
 		t.Fatalf("RunExec(gather) error: %v", err)
 	}
-	if context["test_key"] != "12345" {
-		t.Errorf("RunExec(gather) context[\"test_key\"] = %v; want \"12345\"", context["test_key"])
+	if contextMap["test_key"] != "12345" {
+		t.Errorf("RunExec(gather) contextMap[\"test_key\"] = %v; want \"12345\"", contextMap["test_key"])
 	}
 
 	// 4. Empty script
 	e4 := &playbook.Exec{Script: ""}
-	res, err = RunExec(e4, context)
+	res, err = RunExec(context.Background(), e4, contextMap)
 	if err != nil || !res.Success {
 		t.Errorf("RunExec(empty) = %+v, %v; want Success: true, nil err", res, err)
 	}
 
 	// 5. JS error
 	e5 := &playbook.Exec{Func: "() => { throw new Error('ops') }"}
-	_, err = RunExec(e5, context)
+	_, err = RunExec(context.Background(), e5, contextMap)
 	if err == nil {
 		t.Error("RunExec should fail on JS error")
 	}
 
 	// 6. JS returns empty string
 	e6 := &playbook.Exec{Func: "() => ''"}
-	res, err = RunExec(e6, context)
+	res, err = RunExec(context.Background(), e6, contextMap)
 	if err != nil || !res.Success {
 		t.Errorf("RunExec(js-empty) = %+v, %v; want Success: true, nil err", res, err)
 	}
@@ -242,7 +243,7 @@ func TestRunExec(t *testing.T) {
 		ShellFunc: "() => '!'",
 		Script:    "echo shell_func_test",
 	}
-	res, err = RunExec(e7, context)
+	res, err = RunExec(context.Background(), e7, contextMap)
 	if err != nil {
 		t.Fatalf("RunExec(shell-func) error: %v", err)
 	}
@@ -255,7 +256,7 @@ func TestRunExec(t *testing.T) {
 		ShellFunc: "() => { throw new Error('shell error') }",
 		Script:    "echo fail",
 	}
-	_, err = RunExec(e8, context)
+	_, err = RunExec(context.Background(), e8, contextMap)
 	if err == nil {
 		t.Error("RunExec should fail on ShellFunc JS error")
 	}
@@ -266,7 +267,7 @@ func TestRunExec(t *testing.T) {
 		Shell:     "sh",
 		Script:    "echo hello",
 	}
-	res, err = RunExec(e9, context)
+	res, err = RunExec(context.Background(), e9, contextMap)
 	if err != nil || res.Stdout != "hello" {
 		t.Errorf("RunExec(ShellFunc empty) = %+v, %v; want \"hello\"", res, err)
 	}
@@ -278,7 +279,7 @@ func TestRunExec(t *testing.T) {
 			{Key: "fail", Regex: "[["},
 		},
 	}
-	_, err = RunExec(e10, context)
+	_, err = RunExec(context.Background(), e10, contextMap)
 	if err == nil {
 		t.Error("RunExec should fail on gather error")
 	}

@@ -168,6 +168,10 @@
         "excludeFromReport": {
           "type": "boolean",
           "description": "Hide stdout/stderr results from log and markdown report"
+        },
+        "requireElevation": {
+          "type": "boolean",
+          "description": "Require elevated (sudo/admin) permissions to run this command"
         }
       },
       "additionalProperties": false,
