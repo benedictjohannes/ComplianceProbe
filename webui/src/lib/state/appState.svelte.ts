@@ -187,17 +187,81 @@ export class AppState {
     }
   }
 
+  private createInitialAssertionsFromPlaybook(): AssertionSnapshot[] {
+    const list: AssertionSnapshot[] = [];
+    if (this.playbook && this.playbook.sections) {
+      for (const section of this.playbook.sections) {
+        if (section.assertions) {
+          for (const a of section.assertions) {
+            list.push({
+              code: a.code,
+              title: a.title,
+              status: 'pending',
+              passed: false,
+              score: 0,
+              min_score: 0,
+              duration_ms: 0,
+            });
+          }
+        }
+      }
+    }
+    return list;
+  }
+
   reconcileExecution(snapshot: ExecutionSnapshot): void {
-    this.execution = {
-      ...snapshot,
-      assertions: snapshot.assertions ? [...snapshot.assertions] : [],
-      logs: snapshot.logs ? [...snapshot.logs] : [],
-    };
+    if (!snapshot) return;
+
+    if (!this.execution || this.execution.run_id !== snapshot.run_id) {
+      this.execution = {
+        ...snapshot,
+        assertions: snapshot.assertions ? [...snapshot.assertions] : [],
+        logs: snapshot.logs ? [...snapshot.logs] : [],
+      };
+      this.logs = snapshot.logs ? [...snapshot.logs] : [];
+      if (snapshot.last_event_id > this.lastEventId) {
+        this.lastEventId = snapshot.last_event_id;
+        this.stream.setLastEventId(snapshot.last_event_id);
+      }
+      return;
+    }
+
+    // Reconciling same active run:
+    this.execution.status = snapshot.status;
+    if (snapshot.duration_ms > 0) {
+      this.execution.duration_ms = snapshot.duration_ms;
+    }
+    if (snapshot.active_assertion_code !== undefined) {
+      this.execution.active_assertion_code = snapshot.active_assertion_code;
+    }
+
+    // Merge assertions conservatively without overwriting finished results with pending
+    const incomingAssertions = snapshot.assertions || [];
+    for (const inc of incomingAssertions) {
+      const idx = this.execution.assertions.findIndex((a) => a.code === inc.code);
+      if (idx >= 0) {
+        const current = this.execution.assertions[idx];
+        const currentCompleted =
+          current.status === 'passed' || current.status === 'failed' || current.status === 'cancelled';
+        const incCompleted =
+          inc.status === 'passed' || inc.status === 'failed' || inc.status === 'cancelled';
+        if (!currentCompleted || incCompleted) {
+          this.execution.assertions[idx] = { ...current, ...inc };
+        }
+      } else {
+        this.execution.assertions.push(inc);
+      }
+    }
+
+    if (snapshot.logs && snapshot.logs.length >= this.logs.length) {
+      this.logs = [...snapshot.logs];
+      this.execution.logs = [...snapshot.logs];
+    }
+
     if (snapshot.last_event_id > this.lastEventId) {
       this.lastEventId = snapshot.last_event_id;
       this.stream.setLastEventId(snapshot.last_event_id);
     }
-    this.logs = snapshot.logs ? [...snapshot.logs] : [];
   }
 
   async fullSync(): Promise<void> {
@@ -262,24 +326,20 @@ export class AppState {
         });
     }
 
-    // If transitioned to running and execution is missing, initialize or fetch snapshot
-    if (this.status.startsWith('running') && !this.execution && data.active_run_id) {
-      this.client
-        .getExecution()
-        .then((exec) => {
-          this.reconcileExecution(exec);
-        })
-        .catch(() => {
-          // Initialize placeholder if snapshot GET failed
-          this.execution = {
-            run_id: data.active_run_id ?? 'run',
-            status: this.status,
-            last_event_id: eventId,
-            duration_ms: 0,
-            assertions: [],
-            logs: [],
-          };
-        });
+    // If transitioned to running, ensure execution snapshot exists for this run ID
+    if (this.status.startsWith('running') && data.active_run_id) {
+      if (!this.execution || this.execution.run_id !== data.active_run_id) {
+        this.execution = {
+          run_id: data.active_run_id,
+          status: this.status,
+          last_event_id: eventId,
+          duration_ms: 0,
+          assertions: this.createInitialAssertionsFromPlaybook(),
+          logs: [],
+        };
+      } else {
+        this.execution.status = this.status;
+      }
     }
   }
 
@@ -289,14 +349,14 @@ export class AppState {
     }
 
     // If execution snapshot is not yet created, initialize it
-    if (!this.execution) {
+    if (!this.execution || (data.run_id && this.execution.run_id !== data.run_id)) {
       this.execution = {
         run_id: data.run_id,
         status: 'running',
         active_assertion_code: data.status === 'running' ? data.code : undefined,
         last_event_id: eventId,
         duration_ms: data.duration_ms || 0,
-        assertions: [],
+        assertions: this.createInitialAssertionsFromPlaybook(),
         logs: [],
       };
     }
@@ -442,17 +502,23 @@ export class AppState {
     this.isLoading = true;
     try {
       this.logs = [];
+      const initialAssertions = this.createInitialAssertionsFromPlaybook();
       const stateResp = await this.client.startRun();
       this.reconcileState(stateResp);
-      if (stateResp.active_run_id) {
-        this.execution = {
-          run_id: stateResp.active_run_id,
-          status: stateResp.status,
-          last_event_id: this.lastEventId,
-          duration_ms: 0,
-          assertions: [],
-          logs: [],
-        };
+      const runId = stateResp.active_run_id;
+      if (runId) {
+        if (!this.execution || this.execution.run_id !== runId) {
+          this.execution = {
+            run_id: runId,
+            status: stateResp.status || 'running',
+            last_event_id: this.lastEventId,
+            duration_ms: 0,
+            assertions: initialAssertions,
+            logs: [],
+          };
+        } else {
+          this.execution.status = stateResp.status || this.execution.status;
+        }
       }
     } finally {
       this.isLoading = false;

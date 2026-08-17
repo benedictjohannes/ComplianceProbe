@@ -339,4 +339,121 @@ describe('AppState Store', () => {
     expect(state.errors).toEqual([]);
     expect(state.hasErrors).toBe(false);
   });
+
+  it('race condition prevention: startRun must not overwrite assertions populated by early SSE events', async () => {
+    state.playbook = {
+      title: 'Security Probe',
+      sections: [
+        {
+          title: 'Section 1',
+          description: [],
+          assertions: [
+            { code: 'CHK_1', title: 'Check 1' },
+            { code: 'CHK_2', title: 'Check 2' },
+          ],
+        },
+      ],
+      requiresElevation: false,
+    };
+
+    // Simulate startRun taking some time over HTTP
+    let resolveStartRun: (value: AppStateResponse) => void = () => {};
+    const startRunPromise = new Promise<AppStateResponse>((resolve) => {
+      resolveStartRun = resolve;
+    });
+    vi.spyOn(mockClient, 'startRun').mockReturnValue(startRunPromise);
+
+    // 1. User starts run
+    const runCall = state.startRun();
+
+    // 2. While POST /api/run is in flight, SSE events arrive for run-99
+    state.handleStateChange(
+      {
+        status: 'running',
+        active_run_id: 'run-99',
+        errors: [],
+        report_destination: { folder_source: 'default', https_source: 'off' },
+      },
+      1
+    );
+
+    state.handleAssertionProgress(
+      {
+        run_id: 'run-99',
+        code: 'CHK_1',
+        status: 'passed',
+        passed: true,
+        score: 1,
+        min_score: 1,
+        duration_ms: 50,
+      },
+      2
+    );
+
+    // Verify assertion is recorded as passed
+    expect(state.passedAssertions).toBe(1);
+    expect(state.execution?.assertions.find((a) => a.code === 'CHK_1')?.status).toBe('passed');
+
+    // 3. POST /api/run finally resolves
+    resolveStartRun({
+      status: 'running',
+      active_run_id: 'run-99',
+      errors: [],
+      report_destination: { folder_source: 'default', https_source: 'off' },
+    });
+    await runCall;
+
+    // 4. Assert that CHK_1 is NOT wiped out
+    expect(state.execution?.assertions.find((a) => a.code === 'CHK_1')?.status).toBe('passed');
+    expect(state.passedAssertions).toBe(1);
+  });
+
+  it('race condition prevention: reconcileExecution must not revert completed assertions to pending', () => {
+    state.execution = {
+      run_id: 'run-100',
+      status: 'running',
+      last_event_id: 10,
+      duration_ms: 120,
+      assertions: [
+        {
+          code: 'CHK_1',
+          title: 'Check 1',
+          status: 'passed',
+          passed: true,
+          score: 1,
+          min_score: 1,
+          duration_ms: 60,
+        },
+      ],
+      logs: ['Log 1'],
+    };
+    state.lastEventId = 10;
+
+    // Stale snapshot arrived from initial state where CHK_1 was pending
+    const staleSnapshot: ExecutionSnapshot = {
+      run_id: 'run-100',
+      status: 'running',
+      last_event_id: 2,
+      duration_ms: 0,
+      assertions: [
+        {
+          code: 'CHK_1',
+          title: 'Check 1',
+          status: 'pending',
+          passed: false,
+          score: 0,
+          min_score: 1,
+          duration_ms: 0,
+        },
+      ],
+      logs: [],
+    };
+
+    state.reconcileExecution(staleSnapshot);
+
+    // CHK_1 should remain passed
+    expect(state.execution?.assertions.find((a) => a.code === 'CHK_1')?.status).toBe('passed');
+    expect(state.passedAssertions).toBe(1);
+  });
 });
+

@@ -395,7 +395,11 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
-		"run_id": runID,
+		"run_id":             runID,
+		"active_run_id":      runID,
+		"status":             stateResp.Status,
+		"report_destination": stateResp.ReportDestination,
+		"errors":             stateResp.Errors,
 	})
 }
 
