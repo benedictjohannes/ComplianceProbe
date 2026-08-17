@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/benedictjohannes/crobe/director"
@@ -17,37 +16,48 @@ import (
 )
 
 type serverObserver struct {
-	sm      *StateManager
-	runID   string
-	mu      sync.Mutex
-	eventID int64
-}
-
-func (o *serverObserver) nextEventID() int64 {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.eventID++
-	return o.eventID
+	sm     *StateManager
+	broker *EventBroker
+	runID  string
 }
 
 func (o *serverObserver) OnRunStart(runID string, pb *playbook.Playbook) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	o.sm.snapshot.RunID = runID
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	stateResp := o.sm.GetStateResponse()
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("state_change", runID, stateResp)
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnSectionStart(section playbook.Section, index int, total int) {
-	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	msg := fmt.Sprintf("Processing Section %d/%d: %s", index, total, section.Title)
+	o.sm.mu.Lock()
 	o.sm.snapshot.Logs = append(o.sm.snapshot.Logs, msg)
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("log", o.runID, LogEventData{
+			RunID:   o.runID,
+			Message: msg,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnAssertionStart(assertion playbook.Assertion, index int, total int) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	o.sm.snapshot.ActiveAssertionCode = assertion.Code
 	for i := range o.sm.snapshot.Assertions {
 		if o.sm.snapshot.Assertions[i].Code == assertion.Code {
@@ -55,13 +65,25 @@ func (o *serverObserver) OnAssertionStart(assertion playbook.Assertion, index in
 			break
 		}
 	}
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("assertion_progress", o.runID, AssertionProgressEventData{
+			RunID:    o.runID,
+			Code:     assertion.Code,
+			Status:   "running",
+			MinScore: assertion.GetMinPassingScore(),
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnAssertionComplete(assertion playbook.Assertion, result director.AssertionProgressResult) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
-
 	for i := range o.sm.snapshot.Assertions {
 		if o.sm.snapshot.Assertions[i].Code == assertion.Code {
 			o.sm.snapshot.Assertions[i].Status = result.Status
@@ -73,35 +95,100 @@ func (o *serverObserver) OnAssertionComplete(assertion playbook.Assertion, resul
 			break
 		}
 	}
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("assertion_progress", o.runID, AssertionProgressEventData{
+			RunID:      o.runID,
+			Code:       assertion.Code,
+			Status:     result.Status,
+			Passed:     result.Passed,
+			Score:      result.Score,
+			MinScore:   result.MinScore,
+			DurationMs: result.DurationMs,
+			Output:     result.Output,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnLog(message string) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	o.sm.snapshot.Logs = append(o.sm.snapshot.Logs, message)
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("log", o.runID, LogEventData{
+			RunID:   o.runID,
+			Message: message,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnRunComplete(trace executor.ExecutionTrace, rep report.FinalReport) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	o.sm.snapshot.ActiveAssertionCode = ""
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	durationMs := o.sm.snapshot.DurationMs
+	status := o.sm.status
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("execution_completed", o.runID, ExecutionCompletedEventData{
+			RunID:      o.runID,
+			Status:     status,
+			DurationMs: durationMs,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnRunCancelled(runID string, partialTrace executor.ExecutionTrace) {
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
 	o.sm.snapshot.ActiveAssertionCode = ""
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("execution_cancelled", runID, ExecutionCancelledEventData{
+			RunID: runID,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (o *serverObserver) OnRunError(err error) {
+	msg := fmt.Sprintf("Error: %v", err)
 	o.sm.mu.Lock()
-	defer o.sm.mu.Unlock()
-	o.sm.snapshot.Logs = append(o.sm.snapshot.Logs, fmt.Sprintf("Error: %v", err))
-	o.sm.snapshot.LastEventID = o.nextEventID()
+	o.sm.snapshot.Logs = append(o.sm.snapshot.Logs, msg)
+	o.sm.mu.Unlock()
+
+	var eventID int64
+	if o.broker != nil {
+		eventID = o.broker.Broadcast("log", o.runID, LogEventData{
+			RunID:   o.runID,
+			Message: msg,
+		})
+	}
+
+	o.sm.mu.Lock()
+	o.sm.snapshot.LastEventID = eventID
+	o.sm.mu.Unlock()
 }
 
 func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
@@ -190,16 +277,28 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	s.state.snapshot.Status = s.state.status
 
 	obs := &serverObserver{
-		sm:    s.state,
-		runID: runID,
+		sm:     s.state,
+		broker: s.broker,
+		runID:  runID,
 	}
 
 	runDoneChan := s.state.activeRunDone
+	stateResp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
+
+
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", runID, stateResp)
+	}
 
 	// Launch execution in background goroutine
 	go func() {
 		defer close(runDoneChan)
+		defer func() {
+			if s.lifecycle != nil {
+				s.lifecycle.OnExecutionStateChange()
+			}
+		}()
 
 		// 1. Setup Elevation if required
 		var cleanupElevation func() = func() {}
@@ -214,7 +313,12 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 					Message: fmt.Sprintf("Elevation setup failed: %v", err),
 				})
 				s.state.snapshot.Status = StatusLoaded
+				stateResp := s.state.getStateResponseLocked()
 				s.state.mu.Unlock()
+
+				if s.broker != nil {
+					s.broker.Broadcast("state_change", runID, stateResp)
+				}
 				return
 			}
 			s.state.mu.Lock()
@@ -222,7 +326,12 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 				s.state.status = StatusRunning
 				s.state.snapshot.Status = StatusRunning
 			}
+			stateResp := s.state.getStateResponseLocked()
 			s.state.mu.Unlock()
+
+			if s.broker != nil {
+				s.broker.Broadcast("state_change", runID, stateResp)
+			}
 		}
 		defer cleanupElevation()
 
@@ -231,8 +340,6 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		res := report.GenerateReport(trace)
 
 		s.state.mu.Lock()
-		defer s.state.mu.Unlock()
-
 		s.state.lastReport = &res
 		s.state.snapshot.DurationMs = time.Since(s.state.runStartTime).Milliseconds()
 
@@ -245,6 +352,12 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 				Message: "Execution cancelled by user",
 			})
 			s.state.snapshot.Status = "cancelled"
+			stateResp := s.state.getStateResponseLocked()
+			s.state.mu.Unlock()
+
+			if s.broker != nil {
+				s.broker.Broadcast("state_change", runID, stateResp)
+			}
 			return
 		}
 
@@ -272,6 +385,12 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 			s.state.status = StatusCompleted
 		}
 		s.state.snapshot.Status = s.state.status
+		stateResp := s.state.getStateResponseLocked()
+		s.state.mu.Unlock()
+
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", runID, stateResp)
+		}
 	}()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -314,7 +433,14 @@ func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request) {
 	s.state.snapshot.Status = StatusRunningCancelling
 	cancel := s.state.activeRunCancel
 	doneChan := s.state.activeRunDone
+	runID := s.state.activeRunID
+	stateResp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
+
+
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", runID, stateResp)
+	}
 
 	if cancel != nil {
 		cancel()

@@ -58,11 +58,8 @@ func NewStateManager(cliFolder string) *StateManager {
 	}
 }
 
-// GetStateResponse returns the current state summary.
-func (sm *StateManager) GetStateResponse() AppStateResponse {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-
+// getStateResponseLocked returns the state summary assuming sm.mu is already held.
+func (sm *StateManager) getStateResponseLocked() AppStateResponse {
 	errorsCopy := make([]AppError, len(sm.errors))
 	copy(errorsCopy, sm.errors)
 
@@ -73,6 +70,14 @@ func (sm *StateManager) GetStateResponse() AppStateResponse {
 		ActiveRunID:       sm.activeRunID,
 	}
 }
+
+// GetStateResponse returns the current state summary.
+func (sm *StateManager) GetStateResponse() AppStateResponse {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.getStateResponseLocked()
+}
+
 
 // CanMutate checks if mutation requests are allowed.
 func (sm *StateManager) CanMutate() bool {
@@ -357,3 +362,19 @@ func (sm *StateManager) HasValidationErrors() bool {
 	}
 	return false
 }
+
+// GetStatus returns the current lifecycle status string.
+func (sm *StateManager) GetStatus() string {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.status
+}
+
+// SetStatus updates the lifecycle status in a thread-safe manner.
+func (sm *StateManager) SetStatus(status string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.status = status
+}
+
+

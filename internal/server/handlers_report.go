@@ -215,7 +215,13 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 
 	rep := *s.state.lastReport
 	s.state.status = StatusCompletedSubmitting
+	runID := s.state.activeRunID
+	stateResp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
+
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", runID, stateResp)
+	}
 
 	// Perform Remote Write
 	err := reportwriter.WriteToHTTP(httpsConfig, rep)
@@ -227,11 +233,19 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 			Code:    ErrCodeRemoteSubmissionFailed,
 			Message: fmt.Sprintf("Remote submission failed: %v", err),
 		})
+		resp := s.state.getStateResponseLocked()
 		s.state.mu.Unlock()
+
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", runID, resp)
+		}
+		if s.lifecycle != nil {
+			s.lifecycle.OnExecutionStateChange()
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
@@ -245,8 +259,18 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 		}
 	}
 	s.state.errors = remainingErrors
+	resp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
 
+
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", runID, resp)
+	}
+	if s.lifecycle != nil {
+		s.lifecycle.OnExecutionStateChange()
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+	_ = json.NewEncoder(w).Encode(resp)
 }
+

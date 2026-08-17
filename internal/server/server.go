@@ -15,11 +15,14 @@ import (
 
 // Config contains configuration options for the embedded UI server.
 type Config struct {
-	Host      string
-	Port      int
-	Token     string
-	CLIFolder string
-	NoOpen    bool
+	Host                string
+	Port                int
+	Token               string
+	CLIFolder           string
+	NoOpen              bool
+	StartupGracePeriod  time.Duration
+	InactivityTimeout   time.Duration
+	DisableAutoShutdown bool
 }
 
 // Server is the embedded HTTP server for Compliance Probe Web UI.
@@ -28,6 +31,8 @@ type Server struct {
 	httpServer   *http.Server
 	listener     net.Listener
 	state        *StateManager
+	broker       *EventBroker
+	lifecycle    *LifecycleManager
 	shutdownChan chan struct{}
 	shutdownOnce sync.Once
 }
@@ -45,13 +50,24 @@ func NewServer(cfg Config) (*Server, error) {
 		cfg.Token = token
 	}
 
+	broker := NewEventBroker()
 	state := NewStateManager(cfg.CLIFolder)
 
 	s := &Server{
 		config:       cfg,
 		state:        state,
+		broker:       broker,
 		shutdownChan: make(chan struct{}),
 	}
+
+	lifecycle := NewLifecycleManager(state, LifecycleConfig{
+		StartupGracePeriod:  cfg.StartupGracePeriod,
+		InactivityTimeout:   cfg.InactivityTimeout,
+		DisableAutoShutdown: cfg.DisableAutoShutdown,
+	}, func() {
+		s.TriggerShutdown()
+	})
+	s.lifecycle = lifecycle
 
 	mux := http.NewServeMux()
 	s.registerRoutes(mux)
@@ -64,6 +80,7 @@ func NewServer(cfg Config) (*Server, error) {
 
 	return s, nil
 }
+
 
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	// API routes protected by AuthMiddleware
@@ -90,6 +107,7 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 	apiMux.HandleFunc("/api/report/log", s.handleReportLogGet)
 	apiMux.HandleFunc("/api/report/download", s.handleReportDownload)
 	apiMux.HandleFunc("/api/report/remote-submit", s.handleReportRemoteSubmit)
+	apiMux.HandleFunc("/api/events", s.handleEvents)
 	apiMux.HandleFunc("/api/shutdown", s.handleShutdown)
 
 	// Mount protected API routes
@@ -144,6 +162,9 @@ func (s *Server) registerRoutes(mux *http.ServeMux) {
 
 // Start binds the listener and starts serving HTTP requests.
 func (s *Server) Start() error {
+	if s.listener != nil {
+		return nil
+	}
 	addr := fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -183,6 +204,16 @@ func (s *Server) StateManager() *StateManager {
 	return s.state
 }
 
+// EventBroker returns the underlying EventBroker instance.
+func (s *Server) EventBroker() *EventBroker {
+	return s.broker
+}
+
+// LifecycleManager returns the underlying LifecycleManager instance.
+func (s *Server) LifecycleManager() *LifecycleManager {
+	return s.lifecycle
+}
+
 // Token returns the configured bootstrap token.
 func (s *Server) Token() string {
 	return s.config.Token
@@ -200,6 +231,10 @@ func (s *Server) TriggerShutdown() {
 
 // Shutdown gracefully terminates the HTTP server.
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.lifecycle != nil {
+		s.lifecycle.Stop()
+	}
+
 	s.state.mu.Lock()
 	if s.state.activeRunCancel != nil {
 		s.state.activeRunCancel()
@@ -211,6 +246,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 // Close immediately terminates the HTTP server.
 func (s *Server) Close() error {
+	if s.lifecycle != nil {
+		s.lifecycle.Stop()
+	}
+
 	s.state.mu.Lock()
 	if s.state.activeRunCancel != nil {
 		s.state.activeRunCancel()
@@ -224,3 +263,4 @@ func (s *Server) Close() error {
 func (s *Server) ShutdownChan() <-chan struct{} {
 	return s.shutdownChan
 }
+

@@ -65,6 +65,12 @@ func (s *Server) handleReportDestinationPut(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	resp := s.state.GetStateResponse()
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", "", resp)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+	_ = json.NewEncoder(w).Encode(resp)
 }
+

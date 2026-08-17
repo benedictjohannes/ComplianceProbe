@@ -47,18 +47,26 @@ func (s *Server) handlePlaybookUpload(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		s.state.SetLoadError(ErrCodePlaybookParseFailed, fmt.Sprintf("Failed to parse multipart upload: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		s.state.SetLoadError(ErrCodePlaybookParseFailed, "Missing 'file' field in multipart upload", nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 	defer file.Close()
@@ -66,9 +74,13 @@ func (s *Server) handlePlaybookUpload(w http.ResponseWriter, r *http.Request) {
 	data, err := io.ReadAll(file)
 	if err != nil {
 		s.state.SetLoadError(ErrCodePlaybookParseFailed, fmt.Sprintf("Failed to read uploaded file: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
@@ -84,18 +96,26 @@ func (s *Server) handlePlaybookUpload(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.state.SetLoadError(ErrCodePlaybookParseFailed, fmt.Sprintf("Failed to parse playbook: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
 	// Validate playbook as Agent
 	valErrors := pb.Validate(true)
 	s.state.SetPlaybook(&pb, data, valErrors)
+	resp := s.state.GetStateResponse()
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", "", resp)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // RemotePlaybookClient allows overriding the HTTP client for remote playbook fetches in tests.
@@ -122,17 +142,25 @@ func (s *Server) handlePlaybookRemote(w http.ResponseWriter, r *http.Request) {
 	var req RemotePlaybookRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
 		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Invalid JSON request body: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
 	if !strings.HasPrefix(req.URL, "https://") {
 		s.state.SetLoadError(ErrCodeRemoteFetchFailed, "Remote playbook URL must use HTTPS", nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
@@ -155,9 +183,13 @@ func (s *Server) handlePlaybookRemote(w http.ResponseWriter, r *http.Request) {
 	httpReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, req.URL, nil)
 	if err != nil {
 		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Failed to create HTTP request: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
@@ -165,35 +197,47 @@ func (s *Server) handlePlaybookRemote(w http.ResponseWriter, r *http.Request) {
 		httpReq.Header.Set(k, v)
 	}
 
-	resp, err := client.Do(httpReq)
+	respClient, err := client.Do(httpReq)
 	if err != nil {
 		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Failed to fetch remote playbook: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
-	defer resp.Body.Close()
+	defer respClient.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Remote server responded with status %d", resp.StatusCode), nil)
+	if respClient.StatusCode != http.StatusOK {
+		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Remote server responded with status %d", respClient.StatusCode), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
 	// Limit download size to 5 MB
-	data, err := io.ReadAll(io.LimitReader(resp.Body, 5<<20))
+	data, err := io.ReadAll(io.LimitReader(respClient.Body, 5<<20))
 	if err != nil {
 		s.state.SetLoadError(ErrCodeRemoteFetchFailed, fmt.Sprintf("Failed to read remote playbook: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
-	contentType := resp.Header.Get("Content-Type")
+	contentType := respClient.Header.Get("Content-Type")
 	isJSON := strings.HasPrefix(strings.ToLower(contentType), "application/json")
 
 	var pb playbook.Playbook
@@ -205,18 +249,26 @@ func (s *Server) handlePlaybookRemote(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		s.state.SetLoadError(ErrCodePlaybookParseFailed, fmt.Sprintf("Failed to parse remote playbook: %v", err), nil)
+		resp := s.state.GetStateResponse()
+		if s.broker != nil {
+			s.broker.Broadcast("state_change", "", resp)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 
 	// Validate as Agent
 	valErrors := pb.Validate(true)
 	s.state.SetPlaybook(&pb, data, valErrors)
+	resp := s.state.GetStateResponse()
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", "", resp)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (s *Server) handlePlaybookGet(w http.ResponseWriter, r *http.Request) {
@@ -260,6 +312,12 @@ func (s *Server) handlePlaybookDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp := s.state.GetStateResponse()
+	if s.broker != nil {
+		s.broker.Broadcast("state_change", "", resp)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(s.state.GetStateResponse())
+	_ = json.NewEncoder(w).Encode(resp)
 }
+
