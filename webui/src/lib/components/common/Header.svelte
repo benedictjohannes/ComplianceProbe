@@ -1,7 +1,5 @@
 <script lang="ts">
   import Shield from 'lucide-svelte/icons/shield';
-  import ChevronLeft from 'lucide-svelte/icons/chevron-left';
-  import ChevronRight from 'lucide-svelte/icons/chevron-right';
   import PowerOff from 'lucide-svelte/icons/power-off';
   import Check from 'lucide-svelte/icons/check';
   import { Badge, Button } from '$lib/components/ui';
@@ -27,9 +25,7 @@
     activeStep?: number;
     playbookName?: string;
     connectionState?: ConnectionState;
-    maxAccessibleStep?: number;
     class?: string;
-    onstepchange?: (step: number) => void;
     onshutdown?: () => Promise<void> | void;
   }
 
@@ -37,35 +33,11 @@
     activeStep = 1,
     playbookName,
     connectionState = 'connected',
-    maxAccessibleStep = 1,
     class: className = '',
-    onstepchange,
     onshutdown,
   }: Props = $props();
 
   let shutdownModalOpen = $state(false);
-
-  function canNavigateTo(step: number): boolean {
-    return step <= maxAccessibleStep && step !== activeStep;
-  }
-
-  function handleStepClick(step: number) {
-    if (canNavigateTo(step)) {
-      onstepchange?.(step);
-    }
-  }
-
-  function handlePrevStep() {
-    if (activeStep > 1 && canNavigateTo(activeStep - 1)) {
-      onstepchange?.(activeStep - 1);
-    }
-  }
-
-  function handleNextStep() {
-    if (activeStep < 4 && canNavigateTo(activeStep + 1)) {
-      onstepchange?.(activeStep + 1);
-    }
-  }
 
   const progressPercentage = $derived((activeStep / 4) * 100);
 </script>
@@ -92,22 +64,20 @@
       {/if}
     </div>
 
-    <!-- Center Zone: 4-Step Pipeline Breadcrumb -->
-    <nav class="flex items-center gap-1.5 select-none" aria-label="Pipeline Steps">
+    <!-- Center Zone: 4-Step Pipeline Progress Stepper (Non-clickable visual indicator) -->
+    <ol class="flex items-center gap-1.5 select-none" aria-label="Pipeline Progress">
       {#each PIPELINE_STEPS as step, idx (step.id)}
         {#if idx > 0}
-          <div class="h-px w-4 bg-zinc-300 dark:bg-zinc-800 shrink-0"></div>
+          <li aria-hidden="true" class="h-px w-4 bg-zinc-300 dark:bg-zinc-800 shrink-0 list-none"></li>
         {/if}
 
-        <button
-          type="button"
-          disabled={!canNavigateTo(step.id)}
-          onclick={() => handleStepClick(step.id)}
+        <li
+          aria-current={activeStep === step.id ? 'step' : undefined}
           class={cn(
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
+            'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium list-none select-none',
             activeStep === step.id && 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold shadow-xs',
-            activeStep > step.id && 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900',
-            activeStep < step.id && 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
+            activeStep > step.id && 'text-zinc-600 dark:text-zinc-400',
+            activeStep < step.id && 'text-zinc-400 dark:text-zinc-600 opacity-60'
           )}
         >
           {#if activeStep > step.id}
@@ -120,9 +90,9 @@
             <span class="flex h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
           {/if}
           <span>{step.id}. {step.label}</span>
-        </button>
+        </li>
       {/each}
-    </nav>
+    </ol>
 
     <!-- Right Zone: Connection Status, Theme Toggle & Server Stop -->
     <div class="flex items-center gap-3 min-w-[200px] justify-end">
@@ -168,32 +138,13 @@
       </div>
     </div>
 
-    <!-- Tier 2: Pager & Stop Action -->
-    <div class="flex h-10 items-center justify-between px-3 bg-zinc-50/60 dark:bg-zinc-900/40">
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          disabled={activeStep <= 1 || !canNavigateTo(activeStep - 1)}
-          onclick={handlePrevStep}
-          aria-label="Previous step"
-          class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <ChevronLeft class="h-4 w-4" />
-        </button>
-
+    <!-- Tier 2: Step Status & Stop Action -->
+    <div class="flex h-9 items-center justify-between px-3 bg-zinc-50/60 dark:bg-zinc-900/40">
+      <div class="flex items-center gap-2">
+        <span class="flex h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]"></span>
         <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">
           Step {activeStep} of 4: <span class="text-sky-600 dark:text-sky-400 font-semibold">{PIPELINE_STEPS[activeStep - 1]?.label}</span>
         </span>
-
-        <button
-          type="button"
-          disabled={activeStep >= 4 || !canNavigateTo(activeStep + 1)}
-          onclick={handleNextStep}
-          aria-label="Next step"
-          class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-        >
-          <ChevronRight class="h-4 w-4" />
-        </button>
       </div>
 
       <Button

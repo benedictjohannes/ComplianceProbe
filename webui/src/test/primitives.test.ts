@@ -97,17 +97,19 @@ describe('UI Primitives', () => {
     expect(screen.getByText('Unexpected colon at line 4')).toBeInTheDocument();
   });
 
-  it('renders Header with breadcrumb steps and active playbook', () => {
+  it('renders Header with static pipeline steps and active playbook', () => {
     render(Header, {
       props: {
         activeStep: 2,
         playbookName: 'test-playbook.yaml',
-        maxAccessibleStep: 3,
       },
     });
 
     expect(screen.getAllByText('crobe').length).toBeGreaterThan(0);
     expect(screen.getAllByText('test-playbook.yaml').length).toBeGreaterThan(0);
-    expect(screen.getByText('2. Inspect')).toBeInTheDocument();
+    const activeStepNode = screen.getByText('2. Inspect').closest('li');
+    expect(activeStepNode).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText('Step 2 of 4:')).toBeInTheDocument();
   });
 });
+

@@ -31,14 +31,6 @@
     return appState.currentPipelineStep + 1;
   });
 
-  const maxAccessibleStep = $derived.by(() => {
-    if (appState.isIdle) return 1;
-    if (appState.isLoaded) return 2;
-    if (appState.isRunning) return 3;
-    if (appState.isCompleted) return 4;
-    return 1;
-  });
-
   const connectionState = $derived.by(() => {
     if (appState.connectionStatus === 'connected') return 'connected';
     if (appState.connectionStatus === 'reconnecting') return 'reconnecting';
@@ -60,7 +52,6 @@
     {activeStep}
     playbookName={appState.playbook?.title}
     {connectionState}
-    {maxAccessibleStep}
     onshutdown={handleShutdown}
   />
 
