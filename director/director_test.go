@@ -50,7 +50,7 @@ func TestDirectorScoring(t *testing.T) {
 	}
 	runExec = mockExec
 	trace := Run(context.Background(), config)
-	
+
 	ass := trace.Sections[0].Assertions[0]
 	if ass.Passed {
 		t.Errorf("Assertion passed with score %d; expected fail (min 2)", ass.Score)
@@ -430,6 +430,3 @@ func TestRun_Basic(t *testing.T) {
 		t.Errorf("expected 1 passed in Run, got %d", trace.TotalPassed)
 	}
 }
-
-
-

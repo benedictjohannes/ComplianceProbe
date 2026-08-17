@@ -19,7 +19,7 @@ func TestPreprocessWithE2EAssets(t *testing.T) {
 	}
 
 	rawPlaybookPath := filepath.Join(baseDir, "test.playbook.raw.yaml")
-	
+
 	// 1. Load the raw playbook
 	config, _, err := configsource.LoadConfig(rawPlaybookPath, nil)
 	if err != nil {
@@ -38,7 +38,7 @@ func TestPreprocessWithE2EAssets(t *testing.T) {
 			if assertion.Code == "PlainTest" {
 				foundPlainTest = true
 				exec := assertion.Cmds[0].Exec
-				
+
 				// Verify shellFunc was transpiled from plainVariable.ts
 				if exec.ShellFunc == "" {
 					t.Error("PlainTest: ShellFunc should be populated")
@@ -223,7 +223,7 @@ func TestPreprocessAssertionErrors(t *testing.T) {
 
 func TestBakeFile(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	// Create raw playbook
 	rawYaml := `
 title: "Bake Test"
@@ -238,16 +238,16 @@ sections:
 `
 	inputPath := filepath.Join(tmpDir, "raw.yaml")
 	outputPath := filepath.Join(tmpDir, "baked.yaml")
-	
+
 	if err := os.WriteFile(inputPath, []byte(rawYaml), 0644); err != nil {
 		t.Fatalf("failed to write input: %v", err)
 	}
-	
+
 	// Run BakeFile
 	if err := BakeFile(inputPath, outputPath); err != nil {
 		t.Fatalf("BakeFile failed: %v", err)
 	}
-	
+
 	// Verify output exists
 	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
 		t.Error("baked file was not created")

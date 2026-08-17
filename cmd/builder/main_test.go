@@ -156,4 +156,3 @@ sections:
 		t.Errorf("Expected exit code 1 for non-existent playbook, got %d", code)
 	}
 }
-

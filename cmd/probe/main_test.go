@@ -121,4 +121,3 @@ sections:
 		t.Errorf("Expected exit code 1 for dispatch network error, got %d", code)
 	}
 }
-

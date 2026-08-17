@@ -375,4 +375,3 @@ func TestEvaluateRule(t *testing.T) {
 		t.Errorf("EvaluateRule(direct--1) = %d; want -1", got)
 	}
 }
-

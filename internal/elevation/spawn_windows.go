@@ -54,21 +54,21 @@ func SpawnWorker(socketURI string) (*ProcessHandle, error) {
 	}
 
 	type shellExecuteInfo struct {
-		Size         uint32
-		Mask         uint32
-		Hwnd         windows.Handle
-		Verb         *uint16
-		File         *uint16
-		Parameters   *uint16
-		Directory    *uint16
-		Show         int32
-		InstApp      windows.Handle
-		IDList       uintptr
-		Class        *uint16
-		HkeyClass    windows.Handle
-		HotKey       uint32
+		Size          uint32
+		Mask          uint32
+		Hwnd          windows.Handle
+		Verb          *uint16
+		File          *uint16
+		Parameters    *uint16
+		Directory     *uint16
+		Show          int32
+		InstApp       windows.Handle
+		IDList        uintptr
+		Class         *uint16
+		HkeyClass     windows.Handle
+		HotKey        uint32
 		IconOrMonitor windows.Handle
-		Process      windows.Handle
+		Process       windows.Handle
 	}
 
 	const (

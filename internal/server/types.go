@@ -4,15 +4,15 @@ import "github.com/benedictjohannes/crobe/playbook"
 
 // State status constants
 const (
-	StatusIdle                            = "idle"
-	StatusLoaded                          = "loaded"
-	StatusRunningElevating                = "running.elevating"
-	StatusRunning                         = "running"
-	StatusRunningCancelling               = "running.cancelling"
-	StatusCompletedConfirmingSubmission   = "completed.confirming_submission"
-	StatusCompletedSubmitting             = "completed.submitting"
-	StatusCompleted                       = "completed"
-	StatusError                           = "error"
+	StatusIdle                          = "idle"
+	StatusLoaded                        = "loaded"
+	StatusRunningElevating              = "running.elevating"
+	StatusRunning                       = "running"
+	StatusRunningCancelling             = "running.cancelling"
+	StatusCompletedConfirmingSubmission = "completed.confirming_submission"
+	StatusCompletedSubmitting           = "completed.submitting"
+	StatusCompleted                     = "completed"
+	StatusError                         = "error"
 )
 
 // Error codes
@@ -78,10 +78,10 @@ type PlaybookDestinationDefaults struct {
 
 // ReportDestinationState represents current active report destination configuration.
 type ReportDestinationState struct {
-	Folder           string                      `json:"folder,omitempty"`
-	FolderSource     string                      `json:"folder_source"`
-	HttpsSource      string                      `json:"https_source"`
-	HTTPS            *HttpsDestinationConfig     `json:"https,omitempty"`
+	Folder           string                       `json:"folder,omitempty"`
+	FolderSource     string                       `json:"folder_source"`
+	HttpsSource      string                       `json:"https_source"`
+	HTTPS            *HttpsDestinationConfig      `json:"https,omitempty"`
 	PlaybookDefaults *PlaybookDestinationDefaults `json:"playbook_defaults,omitempty"`
 }
 

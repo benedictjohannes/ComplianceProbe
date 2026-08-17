@@ -1,11 +1,11 @@
 package reportwriter
 
 import (
-	"github.com/benedictjohannes/crobe/playbook"
-	"github.com/benedictjohannes/crobe/report"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/benedictjohannes/crobe/playbook"
+	"github.com/benedictjohannes/crobe/report"
 	"io"
 	"net/http"
 	"net/http/httptest"

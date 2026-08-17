@@ -1,8 +1,6 @@
 package reportwriter
 
 import (
-	"github.com/benedictjohannes/crobe/playbook"
-	"github.com/benedictjohannes/crobe/report"
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -10,6 +8,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/benedictjohannes/crobe/playbook"
+	"github.com/benedictjohannes/crobe/report"
 	"io"
 	"mime/multipart"
 	"net/http"

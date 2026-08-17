@@ -132,8 +132,8 @@ func (s *CommandStatus) UnmarshalJSON(data []byte) error {
 }
 
 type CommandLog struct {
-	Exec       playbook.Exec   `json:"exec"`
-	Status     CommandStatus   `json:"status"`
+	Exec       playbook.Exec `json:"exec"`
+	Status     CommandStatus `json:"status"`
 	Timestamps struct {
 		Start time.Time `json:"start"`
 		End   time.Time `json:"end"`
@@ -165,9 +165,9 @@ type SectionContext struct {
 }
 
 type ExecutionTrace struct {
-	Playbook    playbook.Playbook `json:"playbook"`
-	Sections    []SectionContext  `json:"sections"`
-	Timestamps  struct {
+	Playbook   playbook.Playbook `json:"playbook"`
+	Sections   []SectionContext  `json:"sections"`
+	Timestamps struct {
 		Start time.Time `json:"start"`
 		End   time.Time `json:"end"`
 	} `json:"timestamps"`

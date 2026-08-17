@@ -82,11 +82,12 @@ func (c *ConsoleObserver) OnRunError(err error) {
 // NopObserver is a no-op implementation of ExecutionObserver for tests.
 type NopObserver struct{}
 
-func (n *NopObserver) OnRunStart(runID string, pb *playbook.Playbook)                               {}
-func (n *NopObserver) OnSectionStart(section playbook.Section, index int, total int)               {}
-func (n *NopObserver) OnAssertionStart(assertion playbook.Assertion, index int, total int)        {}
-func (n *NopObserver) OnAssertionComplete(assertion playbook.Assertion, result AssertionProgressResult) {}
-func (n *NopObserver) OnLog(message string)                                                        {}
-func (n *NopObserver) OnRunComplete(trace executor.ExecutionTrace, rep report.FinalReport)        {}
-func (n *NopObserver) OnRunCancelled(runID string, partialTrace executor.ExecutionTrace)          {}
-func (n *NopObserver) OnRunError(err error)                                                         {}
+func (n *NopObserver) OnRunStart(runID string, pb *playbook.Playbook)                      {}
+func (n *NopObserver) OnSectionStart(section playbook.Section, index int, total int)       {}
+func (n *NopObserver) OnAssertionStart(assertion playbook.Assertion, index int, total int) {}
+func (n *NopObserver) OnAssertionComplete(assertion playbook.Assertion, result AssertionProgressResult) {
+}
+func (n *NopObserver) OnLog(message string)                                                {}
+func (n *NopObserver) OnRunComplete(trace executor.ExecutionTrace, rep report.FinalReport) {}
+func (n *NopObserver) OnRunCancelled(runID string, partialTrace executor.ExecutionTrace)   {}
+func (n *NopObserver) OnRunError(err error)                                                {}
