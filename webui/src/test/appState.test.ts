@@ -348,8 +348,8 @@ describe('AppState Store', () => {
           title: 'Section 1',
           description: [],
           assertions: [
-            { code: 'CHK_1', title: 'Check 1' },
-            { code: 'CHK_2', title: 'Check 2' },
+            { code: 'CHK_1', title: 'Check 1', description: '', cmds: [], passDescription: '', failDescription: '' },
+            { code: 'CHK_2', title: 'Check 2', description: '', cmds: [], passDescription: '', failDescription: '' },
           ],
         },
       ],

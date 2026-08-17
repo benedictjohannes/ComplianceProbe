@@ -19,6 +19,7 @@
 
   const activeLogs = $derived(logs ?? appState.logs);
 
+  // svelte-ignore state_referenced_locally
   let isExpanded = $state(initialExpanded);
   let isMaximized = $state(false);
   let autoScroll = $state(true);
