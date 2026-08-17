@@ -302,4 +302,3 @@ sections:
 		t.Errorf("expected exit code 1 for invalid host/port, got %d", code)
 	}
 }
-

@@ -262,7 +262,6 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 	resp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
 
-
 	if s.broker != nil {
 		s.broker.Broadcast("state_change", runID, resp)
 	}
@@ -273,4 +272,3 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
-

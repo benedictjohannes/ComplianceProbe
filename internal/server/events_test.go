@@ -13,7 +13,6 @@ import (
 	"github.com/benedictjohannes/crobe/playbook"
 )
 
-
 func TestEventBroker(t *testing.T) {
 	broker := NewEventBroker()
 
@@ -382,7 +381,6 @@ func TestSSEExecutionLiveEvents(t *testing.T) {
 
 	timeout := time.After(5 * time.Second)
 
-
 	for {
 		select {
 		case <-timeout:
@@ -401,6 +399,3 @@ func TestSSEExecutionLiveEvents(t *testing.T) {
 		}
 	}
 }
-
-
-

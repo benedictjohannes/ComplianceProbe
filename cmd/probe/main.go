@@ -16,4 +16,3 @@ func run(args []string) int {
 		IsAgent: true,
 	})
 }
-

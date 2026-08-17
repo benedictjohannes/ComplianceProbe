@@ -70,5 +70,3 @@ func runPreprocess(inputPath string, outputPath string) int {
 	fmt.Printf("🚀 Preprocessing Complete! Baked playbook saved to: %s\n", outputPath)
 	return 0
 }
-
-

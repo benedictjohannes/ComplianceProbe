@@ -7,9 +7,9 @@ import (
 
 // LifecycleConfig configures the auto-shutdown lifecycle policy.
 type LifecycleConfig struct {
-	StartupGracePeriod   time.Duration
-	InactivityTimeout    time.Duration
-	DisableAutoShutdown  bool
+	StartupGracePeriod  time.Duration
+	InactivityTimeout   time.Duration
+	DisableAutoShutdown bool
 }
 
 // LifecycleManager manages startup grace periods, active SSE connections, and auto-shutdown timers.

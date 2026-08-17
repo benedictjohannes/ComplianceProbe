@@ -78,7 +78,6 @@ func (sm *StateManager) GetStateResponse() AppStateResponse {
 	return sm.getStateResponseLocked()
 }
 
-
 // CanMutate checks if mutation requests are allowed.
 func (sm *StateManager) CanMutate() bool {
 	sm.mu.Lock()
@@ -376,5 +375,3 @@ func (sm *StateManager) SetStatus(status string) {
 	defer sm.mu.Unlock()
 	sm.status = status
 }
-
-

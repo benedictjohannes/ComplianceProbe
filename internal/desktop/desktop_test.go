@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func TestIsDesktopGUI(t *testing.T) {
 	switch runtime.GOOS {
 	case "linux":
@@ -114,5 +113,3 @@ func TestOpenBrowserFunction(t *testing.T) {
 		}
 	}
 }
-
-

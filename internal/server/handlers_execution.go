@@ -286,7 +286,6 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	stateResp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
 
-
 	if s.broker != nil {
 		s.broker.Broadcast("state_change", runID, stateResp)
 	}
@@ -436,7 +435,6 @@ func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request) {
 	runID := s.state.activeRunID
 	stateResp := s.state.getStateResponseLocked()
 	s.state.mu.Unlock()
-
 
 	if s.broker != nil {
 		s.broker.Broadcast("state_change", runID, stateResp)

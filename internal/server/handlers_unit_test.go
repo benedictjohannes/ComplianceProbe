@@ -36,7 +36,6 @@ func TestServerObserverCallbacks(t *testing.T) {
 		t.Errorf("expected state_change event, got %s", ev.Type)
 	}
 
-
 	// 2. OnSectionStart
 	sec := playbook.Section{Title: "Section A"}
 	obs.OnSectionStart(sec, 0, 1)
@@ -456,7 +455,6 @@ func TestHandlers_ReportsEdgeCases(t *testing.T) {
 		Log:      "=== REPORT LOG ===",
 	}
 	srv.StateManager().lastReport = &dummyRes
-
 
 	// 2. Unsupported download format -> 400
 	req := httptest.NewRequest(http.MethodGet, "/api/report/download?format=unsupported", nil)

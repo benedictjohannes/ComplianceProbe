@@ -81,7 +81,6 @@ func NewServer(cfg Config) (*Server, error) {
 	return s, nil
 }
 
-
 func (s *Server) registerRoutes(mux *http.ServeMux) {
 	// API routes protected by AuthMiddleware
 	apiMux := http.NewServeMux()
@@ -263,4 +262,3 @@ func (s *Server) Close() error {
 func (s *Server) ShutdownChan() <-chan struct{} {
 	return s.shutdownChan
 }
-

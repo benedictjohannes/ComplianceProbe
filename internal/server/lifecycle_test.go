@@ -141,7 +141,6 @@ func TestLifecycleManagerExecutionInhibitsShutdown(t *testing.T) {
 	sm.SetStatus(StatusCompleted)
 	lm.OnExecutionStateChange()
 
-
 	if !lm.IsIdleTimerRunning() {
 		t.Errorf("expected idle timer to start after execution complete with 0 clients")
 	}
