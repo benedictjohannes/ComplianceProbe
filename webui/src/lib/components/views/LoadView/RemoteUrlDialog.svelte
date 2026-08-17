@@ -132,7 +132,7 @@
   <form onsubmit={handleSubmit} class="space-y-4">
     <!-- URL Input -->
     <div class="space-y-1.5">
-      <label for="remote-url-input" class="block text-xs font-semibold text-zinc-300">
+      <label for="remote-url-input" class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
         Playbook HTTPS URL
       </label>
 
@@ -147,7 +147,7 @@
           class="pr-20"
         >
           {#snippet leading()}
-            <Globe class="h-4 w-4 text-zinc-500" />
+            <Globe class="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
           {/snippet}
         </Input>
 
@@ -160,7 +160,7 @@
                 validationError = null;
               }}
               disabled={loading}
-              class="rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 cursor-pointer disabled:opacity-50"
+              class="rounded p-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer disabled:opacity-50"
               title="Clear"
             >
               <X class="h-3.5 w-3.5" />
@@ -173,7 +173,7 @@
             size="xs"
             disabled={loading}
             onclick={pasteFromClipboard}
-            class="text-[11px] px-1.5 py-0.5 text-zinc-400 hover:text-sky-400 gap-1 border border-zinc-800 bg-zinc-950"
+            class="text-[11px] px-1.5 py-0.5 text-zinc-600 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 gap-1 border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950"
             title="Paste from clipboard"
           >
             <Clipboard class="h-3 w-3" />
@@ -183,7 +183,7 @@
       </div>
 
       {#if validationError}
-        <p class="text-xs text-rose-400 flex items-center gap-1 mt-1 font-mono">
+        <p class="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-1 font-mono">
           <AlertCircle class="h-3.5 w-3.5 shrink-0" />
           <span>{validationError}</span>
         </p>
@@ -191,20 +191,20 @@
     </div>
 
     <!-- Advanced Headers Accordion -->
-    <div class="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 space-y-3">
+    <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/40 p-3 space-y-3">
       <button
         type="button"
         onclick={() => (showAdvancedHeaders = !showAdvancedHeaders)}
-        class="flex w-full items-center justify-between text-xs font-semibold text-zinc-400 hover:text-zinc-200 cursor-pointer select-none"
+        class="flex w-full items-center justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 cursor-pointer select-none"
       >
         <span class="flex items-center gap-1.5">
           {#if showAdvancedHeaders}
-            <ChevronDown class="h-3.5 w-3.5 text-zinc-500" />
+            <ChevronDown class="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
           {:else}
-            <ChevronRight class="h-3.5 w-3.5 text-zinc-500" />
+            <ChevronRight class="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
           {/if}
           Advanced: Request Headers
-          <span class="rounded-full bg-zinc-800 px-1.5 py-0.2 text-[10px] font-mono text-zinc-400">
+          <span class="rounded-full bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.2 text-[10px] font-mono text-zinc-700 dark:text-zinc-400">
             {headers.length}
           </span>
         </span>

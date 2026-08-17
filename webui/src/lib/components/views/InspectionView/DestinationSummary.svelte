@@ -54,7 +54,7 @@
 
 <div class="space-y-2.5 {className}">
   <div class="flex items-center justify-between">
-    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
       Report Destinations
     </span>
 
@@ -63,9 +63,9 @@
         variant="outline"
         size="xs"
         onclick={onOpenDrawer}
-        class="text-xs text-zinc-300 hover:text-white gap-1.5"
+        class="text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white gap-1.5"
       >
-        <Settings class="h-3.5 w-3.5 text-zinc-400" />
+        <Settings class="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
         Configure Destinations
       </Button>
     {/if}
@@ -73,11 +73,11 @@
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <!-- Local Report Folder Card -->
-    <Card class="p-3.5 space-y-2 border-zinc-800/90 bg-zinc-900/50">
+    <Card class="p-3.5 space-y-2">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <Folder class="h-4 w-4 text-amber-400 shrink-0" />
-          <span class="text-xs font-semibold text-zinc-200">Local Folder Storage</span>
+          <Folder class="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0" />
+          <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Local Folder Storage</span>
         </div>
 
         <Badge variant={folderBadgeVariant} size="sm" class="font-mono text-[10px] uppercase">
@@ -90,17 +90,17 @@
         </Badge>
       </div>
 
-      <div class="font-mono text-xs text-zinc-400 truncate select-all" title={destinationFolderDisplay}>
+      <div class="font-mono text-xs text-zinc-600 dark:text-zinc-400 truncate select-all" title={destinationFolderDisplay}>
         {destinationFolderDisplay}
       </div>
     </Card>
 
     <!-- Remote HTTPS Submission Card -->
-    <Card class="p-3.5 space-y-2 border-zinc-800/90 bg-zinc-900/50">
+    <Card class="p-3.5 space-y-2">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-          <Globe class="h-4 w-4 text-sky-400 shrink-0" />
-          <span class="text-xs font-semibold text-zinc-200">Remote HTTPS Submission</span>
+          <Globe class="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+          <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Remote HTTPS Submission</span>
         </div>
 
         <Badge variant={httpsBadgeVariant} size="sm" class="font-mono text-[10px] uppercase">
@@ -109,18 +109,18 @@
       </div>
 
       <div class="space-y-1">
-        <div class="font-mono text-xs text-zinc-400 truncate select-all" title={httpsEndpointDisplay}>
+        <div class="font-mono text-xs text-zinc-600 dark:text-zinc-400 truncate select-all" title={httpsEndpointDisplay}>
           {httpsEndpointDisplay}
         </div>
 
         {#if !isHttpsOff}
           <div class="flex items-center gap-2 text-[11px] font-mono text-zinc-500">
             <span>
-              Format: <span class="text-zinc-400">{destination.https?.format || destination.playbook_defaults?.https?.format || 'json'}</span>
+              Format: <span class="text-zinc-700 dark:text-zinc-400">{destination.https?.format || destination.playbook_defaults?.https?.format || 'json'}</span>
             </span>
             {#if destination.playbook_defaults?.https?.hasSignatureSecret || destination.https?.secret}
               <span>•</span>
-              <span class="inline-flex items-center text-emerald-400/90 gap-0.5">
+              <span class="inline-flex items-center text-emerald-600 dark:text-emerald-400/90 gap-0.5">
                 <ShieldCheck class="h-3 w-3" />
                 HMAC Signed
               </span>

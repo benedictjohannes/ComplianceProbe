@@ -37,7 +37,7 @@
     bind:value
     {disabled}
     class={cn(
-      'w-full bg-zinc-900 dark:bg-zinc-900 border border-zinc-700 dark:border-zinc-800 rounded-md text-sm text-zinc-100 placeholder:text-zinc-500 py-2 px-3 transition-colors',
+      'w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-md text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 py-2 px-3 transition-colors',
       'focus-visible:outline-none focus-visible:border-sky-500 focus-visible:ring-1 focus-visible:ring-sky-500',
       'disabled:opacity-50 disabled:cursor-not-allowed',
       mono && 'font-mono text-xs',

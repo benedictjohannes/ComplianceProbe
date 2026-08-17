@@ -22,7 +22,7 @@ describe('UI Primitives', () => {
       },
     });
     expect(container.firstChild).toHaveClass('rounded-lg');
-    expect(container.firstChild).toHaveClass('hover:border-zinc-700');
+    expect(container.firstChild).toHaveClass('dark:hover:border-zinc-700');
   });
 
   it('renders Button with variants, disabled and onclick', async () => {

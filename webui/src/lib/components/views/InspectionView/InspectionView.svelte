@@ -94,7 +94,7 @@
     />
 
     <!-- Fixed/Sticky Bottom Action Bar -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-sm py-3 shadow-2xl">
+    <div class="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 shadow-2xl transition-colors">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
         <!-- Left: Unload Action -->
         <Button
@@ -102,7 +102,7 @@
           size="sm"
           disabled={appStateInstance.isLoading}
           onclick={handleUnload}
-          class="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 gap-1.5"
+          class="text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 gap-1.5"
         >
           <Trash2 class="h-4 w-4" />
           Unload Playbook
@@ -117,7 +117,7 @@
             onclick={() => (isDestinationDrawerOpen = true)}
             class="hidden sm:inline-flex gap-1.5"
           >
-            <Settings class="h-4 w-4 text-zinc-400" />
+            <Settings class="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
             Destination Settings
           </Button>
 
@@ -127,7 +127,7 @@
             loading={appStateInstance.isLoading}
             disabled={appStateInstance.isLoading || hasValidationErrors}
             onclick={handleStartRun}
-            class="px-5 shadow-md shadow-emerald-950/50 gap-2 font-semibold"
+            class="px-5 shadow-md shadow-emerald-950/20 dark:shadow-emerald-950/50 gap-2 font-semibold"
             title={hasValidationErrors ? 'Cannot run playbook with validation errors' : 'Execute Playbook'}
           >
             <Play class="h-4 w-4 fill-white" />
@@ -137,7 +137,7 @@
       </div>
     </div>
   {:else}
-    <div class="rounded-lg border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-400 space-y-3">
+    <div class="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-800 p-8 text-center text-sm text-zinc-600 dark:text-zinc-400 space-y-3 bg-white dark:bg-zinc-900/40">
       <p>No playbook loaded in state.</p>
       <Button variant="secondary" size="sm" onclick={() => appStateInstance.unloadPlaybook()}>
         Go to Load Screen

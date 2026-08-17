@@ -70,17 +70,17 @@
   const progressPercentage = $derived((activeStep / 4) * 100);
 </script>
 
-<header class={cn('sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-none', className)}>
+<header class={cn('sticky top-0 z-40 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-none transition-colors', className)}>
   <!-- Desktop & Tablet Header (>= 768px) -->
   <div class="hidden md:flex h-14 items-center justify-between px-4 max-w-7xl mx-auto">
     <!-- Left Zone: Brand & Context -->
     <div class="flex items-center gap-3 min-w-[200px]">
-      <div class="flex items-center gap-2 font-bold tracking-tight text-zinc-100 select-none">
-        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+      <div class="flex items-center gap-2 font-bold tracking-tight text-zinc-900 dark:text-zinc-100 select-none">
+        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
           <Shield class="h-4 w-4" />
         </div>
         <span class="text-base font-semibold">crobe</span>
-        <span class="text-[10px] font-mono font-normal text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+        <span class="text-[10px] font-mono font-normal text-zinc-600 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded">
           v0.1
         </span>
       </div>
@@ -96,7 +96,7 @@
     <nav class="flex items-center gap-1.5 select-none" aria-label="Pipeline Steps">
       {#each PIPELINE_STEPS as step, idx (step.id)}
         {#if idx > 0}
-          <div class="h-px w-4 bg-zinc-800 shrink-0"></div>
+          <div class="h-px w-4 bg-zinc-300 dark:bg-zinc-800 shrink-0"></div>
         {/if}
 
         <button
@@ -105,19 +105,19 @@
           onclick={() => handleStepClick(step.id)}
           class={cn(
             'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all',
-            activeStep === step.id && 'bg-sky-500/10 text-sky-400 border border-sky-500/30 font-semibold shadow-xs',
-            activeStep > step.id && 'text-zinc-300 hover:text-white cursor-pointer hover:bg-zinc-900',
-            activeStep < step.id && 'text-zinc-600 cursor-not-allowed opacity-60'
+            activeStep === step.id && 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold shadow-xs',
+            activeStep > step.id && 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900',
+            activeStep < step.id && 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
           )}
         >
           {#if activeStep > step.id}
-            <span class="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+            <span class="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
               <Check class="h-2.5 w-2.5" />
             </span>
           {:else if activeStep === step.id}
-            <span class="flex h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]"></span>
+            <span class="flex h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]"></span>
           {:else}
-            <span class="flex h-2 w-2 rounded-full bg-zinc-700"></span>
+            <span class="flex h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700"></span>
           {/if}
           <span>{step.id}. {step.label}</span>
         </button>
@@ -127,7 +127,7 @@
     <!-- Right Zone: Connection Status, Theme Toggle & Server Stop -->
     <div class="flex items-center gap-3 min-w-[200px] justify-end">
       <ConnectionStatus state={connectionState} />
-      <div class="h-4 w-px bg-zinc-800"></div>
+      <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800"></div>
       <ThemeToggle />
       <Button
         variant="ghost"
@@ -135,7 +135,7 @@
         onclick={() => {
           shutdownModalOpen = true;
         }}
-        class="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20"
+        class="text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20"
       >
         <PowerOff class="h-3.5 w-3.5 mr-1" />
         <span class="text-xs">Stop</span>
@@ -146,17 +146,17 @@
   <!-- Mobile Header (< 768px, 2-Tier Layout) -->
   <div class="md:hidden flex flex-col">
     <!-- Tier 1: Identity & Status -->
-    <div class="flex h-11 items-center justify-between px-3 border-b border-zinc-800/80">
-      <div class="flex items-center gap-2 font-bold tracking-tight text-zinc-100">
-        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20">
+    <div class="flex h-11 items-center justify-between px-3 border-b border-zinc-200 dark:border-zinc-800/80">
+      <div class="flex items-center gap-2 font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <div class="flex h-6 w-6 items-center justify-center rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
           <Shield class="h-3.5 w-3.5" />
         </div>
         <span class="text-sm font-semibold">crobe</span>
-        <span class="text-[9px] font-mono text-zinc-500 bg-zinc-900 px-1 py-0.2 rounded border border-zinc-800">
+        <span class="text-[9px] font-mono text-zinc-600 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-1 py-0.2 rounded border border-zinc-200 dark:border-zinc-800">
           v0.1
         </span>
         {#if playbookName}
-          <span class="text-[10px] font-mono text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded truncate max-w-[100px]">
+          <span class="text-[10px] font-mono text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded truncate max-w-[100px]">
             {playbookName}
           </span>
         {/if}
@@ -169,20 +169,20 @@
     </div>
 
     <!-- Tier 2: Pager & Stop Action -->
-    <div class="flex h-10 items-center justify-between px-3 bg-zinc-900/40">
+    <div class="flex h-10 items-center justify-between px-3 bg-zinc-50/60 dark:bg-zinc-900/40">
       <div class="flex items-center gap-1.5">
         <button
           type="button"
           disabled={activeStep <= 1 || !canNavigateTo(activeStep - 1)}
           onclick={handlePrevStep}
           aria-label="Previous step"
-          class="p-1 rounded text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
         >
           <ChevronLeft class="h-4 w-4" />
         </button>
 
-        <span class="text-xs font-medium text-zinc-200">
-          Step {activeStep} of 4: <span class="text-sky-400 font-semibold">{PIPELINE_STEPS[activeStep - 1]?.label}</span>
+        <span class="text-xs font-medium text-zinc-700 dark:text-zinc-200">
+          Step {activeStep} of 4: <span class="text-sky-600 dark:text-sky-400 font-semibold">{PIPELINE_STEPS[activeStep - 1]?.label}</span>
         </span>
 
         <button
@@ -190,7 +190,7 @@
           disabled={activeStep >= 4 || !canNavigateTo(activeStep + 1)}
           onclick={handleNextStep}
           aria-label="Next step"
-          class="p-1 rounded text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+          class="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
         >
           <ChevronRight class="h-4 w-4" />
         </button>
@@ -202,7 +202,7 @@
         onclick={() => {
           shutdownModalOpen = true;
         }}
-        class="text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 h-7 text-xs"
+        class="text-zinc-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 h-7 text-xs"
       >
         <PowerOff class="h-3 w-3 mr-1" />
         Stop
@@ -210,7 +210,7 @@
     </div>
 
     <!-- 1px Progress Track at Bottom of Mobile Nav -->
-    <div class="w-full h-[2px] bg-zinc-800">
+    <div class="w-full h-[2px] bg-zinc-200 dark:bg-zinc-800">
       <div
         class="h-full bg-sky-500 transition-all duration-300 ease-out"
         style="width: {progressPercentage}%"

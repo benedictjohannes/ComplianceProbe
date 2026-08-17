@@ -54,7 +54,7 @@
   }
 </script>
 
-<div class="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 dark:bg-zinc-950 dark:text-zinc-100 font-sans selection:bg-sky-500/20 selection:text-sky-300">
+<div class="min-h-screen flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans selection:bg-sky-500/20 selection:text-sky-600 dark:selection:text-sky-300">
   <!-- Persistent Global Shell Header -->
   <Header
     {activeStep}

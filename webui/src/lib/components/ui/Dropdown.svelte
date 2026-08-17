@@ -55,7 +55,7 @@
       {align}
       {sideOffset}
       class={cn(
-        'z-50 min-w-[180px] rounded-lg border border-zinc-700 dark:border-zinc-800 bg-zinc-900 p-1.5 shadow-xl text-zinc-200 animate-in fade-in-0 zoom-in-95',
+        'z-50 min-w-[180px] rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5 shadow-xl text-zinc-800 dark:text-zinc-200 animate-in fade-in-0 zoom-in-95',
         className
       )}
     >
@@ -64,15 +64,15 @@
       {:else}
         {#each items as item (item.id)}
           {#if item.separator}
-            <BitsDropdown.Separator class="my-1 h-px bg-zinc-800" />
+            <BitsDropdown.Separator class="my-1 h-px bg-zinc-200 dark:bg-zinc-800" />
           {:else}
             <BitsDropdown.Item
               disabled={item.disabled}
               onSelect={() => item.onclick?.()}
               class={cn(
                 'relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium outline-none select-none cursor-pointer transition-colors',
-                'hover:bg-zinc-800 hover:text-zinc-100 focus:bg-zinc-800 focus:text-zinc-100',
-                item.danger && 'text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 focus:bg-rose-500/10',
+                'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:text-zinc-900 dark:focus:text-zinc-100',
+                item.danger && 'text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 focus:bg-rose-50 dark:focus:bg-rose-500/10',
                 item.disabled && 'opacity-40 cursor-not-allowed pointer-events-none'
               )}
             >

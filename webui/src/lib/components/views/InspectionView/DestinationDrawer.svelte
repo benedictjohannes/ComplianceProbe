@@ -203,21 +203,21 @@
 
     <!-- 1. LOCAL REPORT FOLDER SECTION -->
     <div class="space-y-3">
-      <div class="flex items-center gap-2 pb-1 border-b border-zinc-800">
-        <Folder class="h-4 w-4 text-amber-400" />
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+      <div class="flex items-center gap-2 pb-1 border-b border-zinc-200 dark:border-zinc-800">
+        <Folder class="h-4 w-4 text-amber-500 dark:text-amber-400" />
+        <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
           Local Report Storage
         </h4>
       </div>
 
       {#if isCliLocked}
-        <div class="rounded-md border border-zinc-800 bg-zinc-950 p-3 space-y-1">
+        <div class="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 p-3 space-y-1">
           <div class="flex items-center gap-2">
-            <Lock class="h-3.5 w-3.5 text-zinc-400" />
-            <span class="text-xs font-medium text-zinc-200">Locked via CLI Flag</span>
+            <Lock class="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+            <span class="text-xs font-medium text-zinc-800 dark:text-zinc-200">Locked via CLI Flag</span>
             <Badge variant="info" size="sm" class="text-[10px]">--folder</Badge>
           </div>
-          <p class="text-xs font-mono text-zinc-400 select-all">
+          <p class="text-xs font-mono text-zinc-600 dark:text-zinc-400 select-all">
             {destination.folder || '~/.local/state/crobe/runs/'}
           </p>
         </div>
@@ -226,7 +226,7 @@
           <!-- Folder Source Options -->
           <div class="grid grid-cols-3 gap-2">
             <label
-              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'default' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'}"
+              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'default' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'}"
             >
               <input
                 type="radio"
@@ -240,7 +240,7 @@
             </label>
 
             <label
-              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'custom' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'}"
+              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'custom' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'}"
             >
               <input
                 type="radio"
@@ -254,7 +254,7 @@
             </label>
 
             <label
-              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'off' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'}"
+              class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {folderSource === 'off' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'}"
             >
               <input
                 type="radio"
@@ -270,7 +270,7 @@
 
           {#if folderSource === 'custom'}
             <div class="pt-1 space-y-1">
-              <label for="custom-folder-input" class="block text-xs font-medium text-zinc-300">
+              <label for="custom-folder-input" class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Directory Path
               </label>
               <Input
@@ -288,9 +288,9 @@
 
     <!-- 2. REMOTE HTTPS SUBMISSION SECTION -->
     <div class="space-y-3">
-      <div class="flex items-center gap-2 pb-1 border-b border-zinc-800">
-        <Globe class="h-4 w-4 text-sky-400" />
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+      <div class="flex items-center gap-2 pb-1 border-b border-zinc-200 dark:border-zinc-800">
+        <Globe class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+        <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
           Remote HTTPS Submission
         </h4>
       </div>
@@ -299,7 +299,7 @@
       <div class="grid grid-cols-3 gap-2">
         {#if hasPlaybookHttps}
           <label
-            class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'playbook' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'}"
+            class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'playbook' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'}"
           >
             <input
               type="radio"
@@ -314,7 +314,7 @@
         {/if}
 
         <label
-          class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'custom' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'} {!hasPlaybookHttps ? 'col-span-1' : ''}"
+          class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'custom' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'} {!hasPlaybookHttps ? 'col-span-1' : ''}"
         >
           <input
             type="radio"
@@ -328,7 +328,7 @@
         </label>
 
         <label
-          class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'off' ? 'border-sky-500 bg-sky-500/10 text-sky-300' : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'} {!hasPlaybookHttps ? 'col-span-2' : ''}"
+          class="flex flex-col items-center justify-center rounded-lg border p-2.5 text-center cursor-pointer transition-colors {httpsSource === 'off' ? 'border-sky-500 bg-sky-500/10 text-sky-700 dark:text-sky-300' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'} {!hasPlaybookHttps ? 'col-span-2' : ''}"
         >
           <input
             type="radio"
@@ -344,17 +344,17 @@
 
       <!-- Playbook HTTPS Config Display -->
       {#if httpsSource === 'playbook' && destination.playbook_defaults?.https}
-        <div class="rounded-md border border-zinc-800 bg-zinc-950/80 p-3 space-y-2 text-xs font-mono">
-          <div class="text-zinc-400">
+        <div class="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/80 p-3 space-y-2 text-xs font-mono">
+          <div class="text-zinc-600 dark:text-zinc-400">
             Target Endpoint:
-            <div class="text-zinc-200 font-semibold select-all">
+            <div class="text-zinc-900 dark:text-zinc-200 font-semibold select-all">
               {destination.playbook_defaults.https.url}
             </div>
           </div>
           <div class="flex items-center gap-3 text-[11px] text-zinc-500">
             <span>Format: {destination.playbook_defaults.https.format}</span>
             {#if destination.playbook_defaults.https.hasSignatureSecret}
-              <span class="text-emerald-400 flex items-center gap-1">
+              <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                 <ShieldCheck class="h-3 w-3" />
                 HMAC Signature: Active
               </span>
@@ -365,10 +365,10 @@
 
       <!-- Custom HTTPS Settings -->
       {#if httpsSource === 'custom'}
-        <div class="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3.5 space-y-3.5">
+        <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-950/60 p-3.5 space-y-3.5">
           <!-- Target Endpoint URL -->
           <div class="space-y-1">
-            <label for="custom-https-url" class="block text-xs font-medium text-zinc-300">
+            <label for="custom-https-url" class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
               Target Endpoint URL
             </label>
             <div class="relative flex items-center">
@@ -385,7 +385,7 @@
                 variant="ghost"
                 size="xs"
                 onclick={pasteUrl}
-                class="absolute right-1 text-[11px] text-zinc-400 hover:text-sky-400 gap-1 border border-zinc-800 bg-zinc-900"
+                class="absolute right-1 text-[11px] text-zinc-600 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 gap-1 border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
               >
                 <Clipboard class="h-3 w-3" />
                 Paste
@@ -395,21 +395,21 @@
 
           <!-- Payload Format Selection -->
           <div class="space-y-1">
-            <span class="block text-xs font-medium text-zinc-300">
+            <span class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
               Payload Format
             </span>
-            <div class="inline-flex rounded-md border border-zinc-800 bg-zinc-900 p-0.5 text-xs font-mono">
+            <div class="inline-flex rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-0.5 text-xs font-mono">
               <button
                 type="button"
                 onclick={() => (customHttpsFormat = 'json')}
-                class="px-3 py-1 rounded text-xs cursor-pointer transition-colors {customHttpsFormat === 'json' ? 'bg-sky-500/20 text-sky-400 font-semibold' : 'text-zinc-400 hover:text-zinc-200'}"
+                class="px-3 py-1 rounded text-xs cursor-pointer transition-colors {customHttpsFormat === 'json' ? 'bg-sky-500/20 text-sky-700 dark:text-sky-400 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'}"
               >
                 JSON Payload
               </button>
               <button
                 type="button"
                 onclick={() => (customHttpsFormat = 'multipart')}
-                class="px-3 py-1 rounded text-xs cursor-pointer transition-colors {customHttpsFormat === 'multipart' ? 'bg-sky-500/20 text-sky-400 font-semibold' : 'text-zinc-400 hover:text-zinc-200'}"
+                class="px-3 py-1 rounded text-xs cursor-pointer transition-colors {customHttpsFormat === 'multipart' ? 'bg-sky-500/20 text-sky-700 dark:text-sky-400 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'}"
               >
                 Multipart Form (.zip)
               </button>
@@ -418,7 +418,7 @@
 
           <!-- HMAC Secret Field -->
           <div class="space-y-1">
-            <label for="custom-https-secret" class="block text-xs font-medium text-zinc-300">
+            <label for="custom-https-secret" class="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
               HMAC Signature Secret (Optional)
             </label>
             <div class="relative flex items-center">
@@ -436,7 +436,7 @@
                 variant="ghost"
                 size="xs"
                 onclick={() => (showSecret = !showSecret)}
-                class="absolute right-1 text-[11px] text-zinc-400 hover:text-zinc-200 gap-1 border border-zinc-800 bg-zinc-900"
+                class="absolute right-1 text-[11px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 gap-1 border border-zinc-300 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
               >
                 {#if showSecret}
                   <EyeOff class="h-3 w-3" />
@@ -450,9 +450,9 @@
           </div>
 
           <!-- Custom Authorization Headers -->
-          <div class="space-y-2 pt-1 border-t border-zinc-800">
+          <div class="space-y-2 pt-1 border-t border-zinc-200 dark:border-zinc-800">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-medium text-zinc-400">
+              <span class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Custom Request Headers ({customHeaders.length})
               </span>
               <Button
@@ -460,7 +460,7 @@
                 variant="outline"
                 size="xs"
                 onclick={addHeaderRow}
-                class="text-[11px] text-zinc-300 hover:text-sky-400 gap-1"
+                class="text-[11px] text-zinc-700 dark:text-zinc-300 hover:text-sky-600 dark:hover:text-sky-400 gap-1"
               >
                 <Plus class="h-3 w-3" />
                 Add Header
@@ -488,7 +488,7 @@
                     <button
                       type="button"
                       onclick={() => removeHeaderRow(idx)}
-                      class="p-1 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded cursor-pointer"
+                      class="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-500/10 rounded cursor-pointer"
                     >
                       <Trash2 class="h-3.5 w-3.5" />
                     </button>

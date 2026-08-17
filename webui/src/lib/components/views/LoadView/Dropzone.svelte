@@ -112,7 +112,7 @@
       'relative rounded-xl border border-dashed p-8 text-center transition-all select-none',
       isDragOver
         ? 'border-sky-500 bg-sky-500/10 shadow-lg shadow-sky-500/10 scale-[1.01]'
-        : 'border-zinc-700 bg-zinc-900/40 hover:border-zinc-500',
+        : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 hover:border-zinc-400 dark:hover:border-zinc-500 shadow-xs',
       (disabled || loading) && 'opacity-60 pointer-events-none cursor-not-allowed',
       localError && 'border-rose-500/60 bg-rose-500/5'
     )}
@@ -133,9 +133,9 @@
         class={cn(
           'mx-auto flex h-14 w-14 items-center justify-center rounded-full transition-transform duration-200',
           isDragOver
-            ? 'bg-sky-500/20 text-sky-400 scale-110'
-            : 'bg-zinc-800/80 text-zinc-400',
-          loading && 'text-sky-400 bg-sky-500/20'
+            ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400 scale-110'
+            : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400',
+          loading && 'text-sky-600 dark:text-sky-400 bg-sky-500/20'
         )}
       >
         {#if loading}
@@ -148,25 +148,25 @@
       <!-- Text Headings -->
       <div class="space-y-1.5">
         {#if loading}
-          <div class="text-sm font-semibold text-zinc-200">
+          <div class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
             Parsing and validating playbook schema...
           </div>
           <div class="text-xs font-mono text-zinc-500">
             Verifying assertion rules, commands, and target destinations
           </div>
         {:else if isDragOver}
-          <div class="text-sm font-semibold text-sky-300">
+          <div class="text-sm font-semibold text-sky-600 dark:text-sky-300">
             Drop file to load playbook...
           </div>
-          <div class="text-xs font-mono text-sky-400/80">
+          <div class="text-xs font-mono text-sky-600/80 dark:text-sky-400/80">
             Release to ingest into compliance runner
           </div>
         {:else}
-          <div class="text-base font-semibold text-zinc-200">
+          <div class="text-base font-semibold text-zinc-800 dark:text-zinc-200">
             Drag & drop your compliance playbook
           </div>
           <div class="text-xs font-mono text-zinc-500">
-            Supports <span class="text-zinc-400">.yaml</span>, <span class="text-zinc-400">.yml</span>, and <span class="text-zinc-400">.json</span> files
+            Supports <span class="text-zinc-700 dark:text-zinc-400">.yaml</span>, <span class="text-zinc-700 dark:text-zinc-400">.yml</span>, and <span class="text-zinc-700 dark:text-zinc-400">.json</span> files
           </div>
         {/if}
       </div>

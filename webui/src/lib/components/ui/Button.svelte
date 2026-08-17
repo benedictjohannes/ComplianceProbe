@@ -30,10 +30,10 @@
 
   const variantStyles: Record<ButtonVariant, string> = {
     primary: 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold shadow-sm focus-visible:ring-emerald-500 border border-emerald-500/20',
-    secondary: 'bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-800 text-zinc-200 font-medium border border-zinc-700 shadow-xs focus-visible:ring-zinc-400 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:border-zinc-700/80',
-    outline: 'border border-zinc-700 hover:bg-zinc-800/60 active:bg-zinc-800 text-zinc-300 hover:text-zinc-100 font-medium focus-visible:ring-zinc-400',
-    ghost: 'hover:bg-zinc-800/60 active:bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 font-medium focus-visible:ring-zinc-400',
-    destructive: 'border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 active:bg-rose-500/20 font-semibold focus-visible:ring-rose-500',
+    secondary: 'bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-900 font-medium border border-zinc-300 shadow-xs focus-visible:ring-zinc-400 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:active:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700/80',
+    outline: 'border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:bg-zinc-200 dark:active:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium focus-visible:ring-zinc-400 bg-transparent',
+    ghost: 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:bg-zinc-200 dark:active:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 font-medium focus-visible:ring-zinc-400',
+    destructive: 'border border-rose-300 dark:border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 active:bg-rose-100 dark:active:bg-rose-500/20 font-semibold focus-visible:ring-rose-500',
     accent: 'bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-semibold shadow-sm focus-visible:ring-sky-500 border border-sky-500/20',
     indigo: 'bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold shadow-sm focus-visible:ring-indigo-500 border border-indigo-500/20',
   };

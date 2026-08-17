@@ -29,7 +29,7 @@
       {@const isExpanded = !collapsedSections[sIndex]}
       <div class="space-y-3">
         <!-- Level 1: Section Header (Unboxed, clean) -->
-        <div class="border-b border-zinc-800 pb-2">
+        <div class="border-b border-zinc-200 dark:border-zinc-800 pb-2">
           <button
             type="button"
             onclick={() => toggleSection(sIndex)}
@@ -37,7 +37,7 @@
           >
             <div class="space-y-1">
               <div class="flex items-center gap-2">
-                <span class="text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                <span class="text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
                   {#if isExpanded}
                     <ChevronDown class="h-4 w-4 shrink-0" />
                   {:else}
@@ -45,17 +45,17 @@
                   {/if}
                 </span>
 
-                <h3 class="font-semibold text-base sm:text-lg text-zinc-100 group-hover:text-white transition-colors">
+                <h3 class="font-semibold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">
                   {sIndex + 1}. {section.title}
                 </h3>
 
-                <span class="rounded-full bg-zinc-800/90 border border-zinc-700/60 px-2 py-0.5 text-xs font-mono text-zinc-400">
+                <span class="rounded-full bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700/60 px-2 py-0.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
                   {section.assertions?.length || 0} {(section.assertions?.length || 0) === 1 ? 'assertion' : 'assertions'}
                 </span>
               </div>
 
               {#if section.description && section.description.length > 0}
-                <div class="text-xs sm:text-sm text-zinc-400 pl-6 leading-relaxed">
+                <div class="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 pl-6 leading-relaxed">
                   {#each section.description as desc}
                     <p>{desc}</p>
                   {/each}

@@ -27,10 +27,10 @@
   }: Props = $props();
 </script>
 
-<BitsAccordion.Item {value} {disabled} class={cn('border-b border-zinc-800 last:border-b-0', className)}>
+<BitsAccordion.Item {value} {disabled} class={cn('border-b border-zinc-200 dark:border-zinc-800 last:border-b-0', className)}>
   <BitsAccordion.Header class={cn('flex items-center justify-between', headerClass)}>
     <BitsAccordion.Trigger
-      class="flex flex-1 items-center justify-between py-3 px-2 text-sm font-medium text-zinc-200 transition-all hover:text-white cursor-pointer select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 rounded"
+      class="flex flex-1 items-center justify-between py-3 px-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 transition-all hover:text-zinc-900 dark:hover:text-white cursor-pointer select-none group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 rounded"
     >
       {#if trigger}
         {@render trigger()}
@@ -43,12 +43,12 @@
         </div>
       {/if}
       <ChevronDown
-        class="h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 group-data-[state=open]:rotate-180"
+        class="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 group-data-[state=open]:rotate-180"
       />
     </BitsAccordion.Trigger>
   </BitsAccordion.Header>
   <BitsAccordion.Content
-    class="overflow-hidden text-sm text-zinc-300 transition-all px-2 pb-3"
+    class="overflow-hidden text-sm text-zinc-600 dark:text-zinc-300 transition-all px-2 pb-3"
   >
     {#if children}
       {@render children()}

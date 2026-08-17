@@ -42,13 +42,13 @@
 <div class="space-y-6 animate-in fade-in-50 duration-200 {className}">
   <!-- Centered Heading & Intro -->
   <div class="text-center space-y-2 pt-4">
-    <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 mb-1">
+    <div class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 mb-1">
       <Shield class="h-5 w-5" />
     </div>
-    <h2 class="text-2xl font-bold tracking-tight text-zinc-100">
+    <h2 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
       Ingest Compliance Playbook
     </h2>
-    <p class="text-sm text-zinc-400 max-w-md mx-auto">
+    <p class="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
       Upload or fetch a YAML or JSON compliance definition to inspect assertions and execute audits.
     </p>
   </div>
@@ -62,9 +62,9 @@
 
   <!-- Divider -->
   <div class="max-w-xl mx-auto flex items-center gap-3">
-    <div class="flex-1 h-px bg-zinc-800"></div>
-    <span class="text-[11px] font-mono uppercase text-zinc-500">or</span>
-    <div class="flex-1 h-px bg-zinc-800"></div>
+    <div class="flex-1 h-px bg-zinc-200 dark:bg-zinc-800"></div>
+    <span class="text-[11px] font-mono uppercase text-zinc-400 dark:text-zinc-500">or</span>
+    <div class="flex-1 h-px bg-zinc-200 dark:bg-zinc-800"></div>
   </div>
 
   <!-- Remote HTTPS Action Trigger -->
