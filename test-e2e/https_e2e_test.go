@@ -24,7 +24,7 @@ import (
 	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/playbook"
 	"github.com/benedictjohannes/crobe/report"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func TestHTTPSScenario(t *testing.T) {

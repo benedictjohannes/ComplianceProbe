@@ -8,7 +8,7 @@ import (
 	"github.com/benedictjohannes/crobe/executor"
 	"github.com/benedictjohannes/crobe/playbook"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 type Assertion struct {

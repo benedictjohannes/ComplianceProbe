@@ -8,7 +8,7 @@ import (
 
 	"github.com/benedictjohannes/crobe/internal/configsource"
 	"github.com/benedictjohannes/crobe/playbook"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // BakeFile loads a raw playbook from inputPath, transpiles all external scripts,

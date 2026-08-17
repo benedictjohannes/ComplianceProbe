@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/benedictjohannes/crobe/playbook"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 func (s *Server) handleState(w http.ResponseWriter, r *http.Request) {

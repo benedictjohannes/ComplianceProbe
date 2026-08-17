@@ -11,7 +11,7 @@ import (
 
 	"github.com/benedictjohannes/crobe/playbook"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // LoadConfig loads the playbook from either a local file or an HTTPS URL.
