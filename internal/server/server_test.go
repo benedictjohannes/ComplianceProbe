@@ -19,6 +19,7 @@ import (
 	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/internal/server"
 	"github.com/benedictjohannes/crobe/report"
+	"github.com/klauspost/compress/zstd"
 )
 
 const sampleValidPlaybookYAML = `
@@ -668,6 +669,39 @@ func TestServer_ExecutionRunAndReports(t *testing.T) {
 	}
 	if fileCount != 3 {
 		t.Errorf("expected 3 files in tar.gz, got %d", fileCount)
+	}
+
+	// Tar.zst
+	req, _ = http.NewRequest(http.MethodGet, ts.URL+"/api/report/download?format=tar.zst", nil)
+	authedRequest(req, srv.Token())
+	resp, _ = http.DefaultClient.Do(req)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("download tar.zst status = %d, want 200", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "application/zstd" {
+		t.Errorf("download tar.zst content-type = %s, want application/zstd", ct)
+	}
+	tzstData, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	zrZstd, err := zstd.NewReader(bytes.NewReader(tzstData))
+	if err != nil {
+		t.Fatalf("invalid zstd reader: %v", err)
+	}
+	tr = tar.NewReader(zrZstd)
+	fileCount = 0
+	for {
+		_, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("tar read error: %v", err)
+		}
+		fileCount++
+	}
+	zrZstd.Close()
+	if fileCount != 3 {
+		t.Errorf("expected 3 files in tar.zst, got %d", fileCount)
 	}
 }
 

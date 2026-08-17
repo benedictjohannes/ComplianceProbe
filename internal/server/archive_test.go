@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/benedictjohannes/crobe/report"
+	"github.com/klauspost/compress/zstd"
 )
 
 func TestBuildReportArchive(t *testing.T) {
@@ -101,7 +102,41 @@ func TestBuildReportArchive(t *testing.T) {
 		}
 	}
 
-	// 5. Unsupported format returns error
+	// 5. Tar.zst / tzst / zst format
+	for _, fmtStr := range []string{"tar.zst", "tzst", "zst"} {
+		data, mimeType, filename, err = BuildReportArchive(dummyRes, fmtStr)
+		if err != nil {
+			t.Fatalf("BuildReportArchive(%s) failed: %v", fmtStr, err)
+		}
+		if mimeType != "application/zstd" || filename != "report.tar.zst" {
+			t.Errorf("expected application/zstd and report.tar.zst, got %s and %s", mimeType, filename)
+		}
+		zr, err := zstd.NewReader(bytes.NewReader(data))
+		if err != nil {
+			t.Fatalf("zstd reader failed: %v", err)
+		}
+		tr = tar.NewReader(zr)
+		fileCount = 0
+		for {
+			hdr, err := tr.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				t.Fatalf("tar.zst read error: %v", err)
+			}
+			if hdr.Name != "report.json" && hdr.Name != "report.md" && hdr.Name != "report.log" {
+				t.Errorf("unexpected file in tar.zst: %s", hdr.Name)
+			}
+			fileCount++
+		}
+		zr.Close()
+		if fileCount != 3 {
+			t.Errorf("expected 3 files in tar.zst, got %d", fileCount)
+		}
+	}
+
+	// 6. Unsupported format returns error
 	_, _, _, err = BuildReportArchive(dummyRes, "invalid_fmt")
 	if err == nil {
 		t.Errorf("expected error for invalid archive format, got nil")

@@ -19,6 +19,7 @@ require (
 	github.com/dlclark/regexp2/v2 v2.7.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )
