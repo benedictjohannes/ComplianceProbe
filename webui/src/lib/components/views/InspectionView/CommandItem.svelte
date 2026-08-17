@@ -141,9 +141,9 @@
   {/if}
 
   <!-- Evaluation Rules (Main Commands) -->
-  {#if cmd && (cmd.stdOutRule || cmd.stdErrRule || (cmd.exitCodeRules && cmd.exitCodeRules.length > 0))}
+  {#if cmd && ((cmd.stdOutRule && (cmd.stdOutRule.regex || cmd.stdOutRule.func)) || (cmd.stdErrRule && (cmd.stdErrRule.regex || cmd.stdErrRule.func)) || (cmd.exitCodeRules && cmd.exitCodeRules.length > 0))}
     <div class="space-y-1.5 text-zinc-600 dark:text-zinc-400 text-[11px] pt-1 border-t border-zinc-200/80 dark:border-zinc-800/60">
-      {#if cmd.stdOutRule}
+      {#if cmd.stdOutRule && (cmd.stdOutRule.regex || cmd.stdOutRule.func)}
         <div class="flex flex-wrap items-center gap-1.5">
           <span class="text-zinc-500 font-medium">StdOut Rule:</span>
           {#if cmd.stdOutRule.regex}
@@ -161,7 +161,7 @@
         </div>
       {/if}
 
-      {#if cmd.stdErrRule}
+      {#if cmd.stdErrRule && (cmd.stdErrRule.regex || cmd.stdErrRule.func)}
         <div class="flex flex-wrap items-center gap-1.5">
           <span class="text-rose-600 dark:text-rose-400 font-medium">StdErr Rule:</span>
           {#if cmd.stdErrRule.regex}
