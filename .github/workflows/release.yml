@@ -54,6 +54,9 @@ jobs:
           path: |
             reports/
             test-e2e/*.baked.yaml
+            webui/playwright-report/
+            webui/test-results/
+          retention-days: 30
 
       - name: Generate Schema
         run: make schema
