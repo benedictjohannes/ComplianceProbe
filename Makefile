@@ -5,7 +5,7 @@ BINARY_NAME=crobe
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
 
-.PHONY: help schema build-webui build build-linux build-windows build-mac-intel build-mac-arm build-builder build-builder-linux build-builder-windows build-builder-mac-intel build-builder-mac-arm test test-coverage test-coverage-report test-e2e clean
+.PHONY: help schema build-webui build build-linux build-windows build-mac-intel build-mac-arm build-builder build-builder-linux build-builder-windows build-builder-mac-intel build-builder-mac-arm test test-coverage test-coverage-report test-e2e test-e2e-gui clean
 
 ## help: Show this help message
 help:
@@ -78,6 +78,10 @@ test-e2e: ## Verify transpilation and running playbooks with compiled binaries
 	# 4. Deep Audit of generated reports and file persistence
 	./$(BINARY_NAME)-linux test-e2e/test.playbook.reportevaluate.yaml
 	@echo "✅ E2E verification passed"
+	
+test-e2e-gui: build-linux ## Run Playwright GUI E2E tests against embedded binary
+	@echo "Running Playwright Web UI E2E tests..."
+	cd webui && npx playwright test
 
 
 ## clean: Remove all generated binaries

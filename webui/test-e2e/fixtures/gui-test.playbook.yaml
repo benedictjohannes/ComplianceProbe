@@ -1,0 +1,31 @@
+title: "GUI Verification Playbook"
+sections:
+  - title: "System Checks"
+    description:
+      - "Verify system environment and security posture"
+    assertions:
+      - code: OSCheck
+        title: "Operating System Check"
+        description: "Verifies host OS identification"
+        cmds:
+          - exec:
+              func: '() => "echo \"OS Check: Linux\" && sleep 0.1"'
+            exitCodeRules:
+              - min: 0
+                max: 0
+                result: 1
+        passDescription: "Host OS verified successfully"
+        failDescription: "Host OS check failed"
+
+      - code: SecurityCheck
+        title: "Security Benchmark"
+        description: "Checks security compliance rules"
+        cmds:
+          - exec:
+              func: '() => "echo \"Security benchmark scan: OK\" && sleep 0.1"'
+            exitCodeRules:
+              - min: 0
+                max: 0
+                result: 1
+        passDescription: "Security benchmark passed"
+        failDescription: "Security benchmark failed"
