@@ -11,3 +11,4 @@ playbook-windows.yaml
 coverage.*
 crobe*
 webui/node_modules
+internal/webui/dist
