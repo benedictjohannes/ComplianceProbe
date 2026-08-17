@@ -1,12 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Header } from '$lib/components/common';
-  import { LoadView, InspectionView } from '$lib/components/views';
+  import { LoadView, InspectionView, ExecutionView } from '$lib/components/views';
   import { appState } from '$lib/state/appState.svelte';
   import { themeStore } from '$lib/state/theme.svelte';
   import { apiClient } from '$lib/api/client';
-  import Loader2 from 'lucide-svelte/icons/loader-2';
-  import Play from 'lucide-svelte/icons/play';
   import Award from 'lucide-svelte/icons/award';
   import AlertTriangle from 'lucide-svelte/icons/alert-triangle';
 
@@ -65,22 +63,9 @@
     {:else if appState.isLoaded}
       <InspectionView />
 
-    <!-- STEP 3: EXECUTION VIEW (RUNNING) (Phase 3D Placeholder) -->
+    <!-- STEP 3: EXECUTION VIEW (RUNNING) -->
     {:else if appState.isRunning}
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-8 text-center space-y-4 animate-in fade-in-50">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-500/10 text-sky-400">
-          <Loader2 class="h-6 w-6 animate-spin" />
-        </div>
-        <div class="space-y-1">
-          <h3 class="text-lg font-bold text-zinc-100">Live Execution in Progress</h3>
-          <p class="text-xs font-mono text-zinc-400">
-            Run ID: {appState.execution?.run_id || appState.activeRunId || 'active'}
-          </p>
-        </div>
-        <div class="text-xs text-zinc-400 max-w-md mx-auto">
-          Executing assertions and streaming audit logs in real-time.
-        </div>
-      </div>
+      <ExecutionView />
 
     <!-- STEP 4: RESULTS VIEW (COMPLETED) (Phase 3E Placeholder) -->
     {:else if appState.isCompleted}
