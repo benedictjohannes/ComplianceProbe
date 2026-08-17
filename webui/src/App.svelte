@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Header } from '$lib/components/common';
-  import { LoadView, InspectionView, ExecutionView } from '$lib/components/views';
+  import { LoadView, InspectionView, ExecutionView, ResultsView } from '$lib/components/views';
   import { appState } from '$lib/state/appState.svelte';
   import { themeStore } from '$lib/state/theme.svelte';
   import { apiClient } from '$lib/api/client';
-  import Award from 'lucide-svelte/icons/award';
   import AlertTriangle from 'lucide-svelte/icons/alert-triangle';
 
   // Extract query token if present on initial load
@@ -67,28 +66,9 @@
     {:else if appState.isRunning}
       <ExecutionView />
 
-    <!-- STEP 4: RESULTS VIEW (COMPLETED) (Phase 3E Placeholder) -->
+    <!-- STEP 4: RESULTS VIEW (COMPLETED) -->
     {:else if appState.isCompleted}
-      <div class="rounded-xl border border-zinc-800 bg-zinc-900/60 p-8 text-center space-y-4 animate-in fade-in-50">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-          <Award class="h-6 w-6" />
-        </div>
-        <div class="space-y-1">
-          <h3 class="text-lg font-bold text-zinc-100">Audit Execution Completed</h3>
-          <p class="text-xs font-mono text-zinc-400">
-            Passed: {appState.passedAssertions} / {appState.totalAssertions}
-          </p>
-        </div>
-        <div class="pt-2">
-          <button
-            type="button"
-            onclick={() => appState.unloadPlaybook()}
-            class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-md border border-zinc-700 cursor-pointer"
-          >
-            Load Another Playbook
-          </button>
-        </div>
-      </div>
+      <ResultsView />
 
     <!-- FATAL SYSTEM ERROR STATE -->
     {:else if appState.isError}
