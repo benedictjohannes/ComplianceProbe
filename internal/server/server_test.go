@@ -137,6 +137,8 @@ func TestServer_AuthAndSecurity(t *testing.T) {
 	}
 	if csp := resp.Header.Get("Content-Security-Policy"); csp == "" {
 		t.Errorf("missing Content-Security-Policy header")
+	} else if !strings.Contains(csp, "default-src 'self'") || !strings.Contains(csp, "style-src 'self' 'unsafe-inline'") {
+		t.Errorf("Content-Security-Policy header %q missing required directives", csp)
 	}
 	if cache := resp.Header.Get("Cache-Control"); cache != "no-store" {
 		t.Errorf("Cache-Control = %q, want 'no-store'", cache)
