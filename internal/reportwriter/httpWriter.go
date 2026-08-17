@@ -33,6 +33,9 @@ type reportFile struct {
 	content     []byte
 }
 
+// HTTPClient allows custom HTTP client injection for testing or custom transport.
+var HTTPClient *http.Client
+
 // WriteToHTTP sends the report to a remote server.
 func WriteToHTTP(config *playbook.ReportDestinationConfig, res report.FinalResult) (err error) {
 	if !strings.HasPrefix(config.URL, "https://") {
@@ -100,8 +103,11 @@ func WriteToHTTP(config *playbook.ReportDestinationConfig, res report.FinalResul
 		req.Header.Set(k, v)
 	}
 
-	client := &http.Client{
-		Timeout: 60 * time.Second,
+	client := HTTPClient
+	if client == nil {
+		client = &http.Client{
+			Timeout: 60 * time.Second,
+		}
 	}
 
 	formatStr := config.Format
