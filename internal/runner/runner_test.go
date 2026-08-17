@@ -15,11 +15,14 @@ import (
 func TestRunnerHeadless(t *testing.T) {
 	origDisplay := os.Getenv("DISPLAY")
 	origWayland := os.Getenv("WAYLAND_DISPLAY")
+	origDBus := os.Getenv("DBUS_SESSION_BUS_ADDRESS")
 	_ = os.Unsetenv("DISPLAY")
 	_ = os.Unsetenv("WAYLAND_DISPLAY")
+	_ = os.Unsetenv("DBUS_SESSION_BUS_ADDRESS")
 	defer func() {
 		_ = os.Setenv("DISPLAY", origDisplay)
 		_ = os.Setenv("WAYLAND_DISPLAY", origWayland)
+		_ = os.Setenv("DBUS_SESSION_BUS_ADDRESS", origDBus)
 	}()
 
 	opts := Options{

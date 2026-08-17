@@ -11,18 +11,21 @@ import (
 func TestIsDesktopGUI(t *testing.T) {
 	switch runtime.GOOS {
 	case "linux":
-		// Test when DISPLAY / WAYLAND_DISPLAY are unset
+		// Test when DISPLAY / WAYLAND_DISPLAY / DBUS_SESSION_BUS_ADDRESS are unset
 		origDisplay := os.Getenv("DISPLAY")
 		origWayland := os.Getenv("WAYLAND_DISPLAY")
+		origDBus := os.Getenv("DBUS_SESSION_BUS_ADDRESS")
 		defer func() {
 			_ = os.Setenv("DISPLAY", origDisplay)
 			_ = os.Setenv("WAYLAND_DISPLAY", origWayland)
+			_ = os.Setenv("DBUS_SESSION_BUS_ADDRESS", origDBus)
 		}()
 
 		_ = os.Unsetenv("DISPLAY")
 		_ = os.Unsetenv("WAYLAND_DISPLAY")
+		_ = os.Unsetenv("DBUS_SESSION_BUS_ADDRESS")
 		if IsDesktopGUI() {
-			t.Errorf("expected IsDesktopGUI() to be false when DISPLAY and WAYLAND_DISPLAY are unset")
+			t.Errorf("expected IsDesktopGUI() to be false when DISPLAY, WAYLAND_DISPLAY, and DBUS_SESSION_BUS_ADDRESS are unset")
 		}
 
 		_ = os.Setenv("DISPLAY", ":0")
@@ -34,6 +37,12 @@ func TestIsDesktopGUI(t *testing.T) {
 		_ = os.Setenv("WAYLAND_DISPLAY", "wayland-0")
 		if !IsDesktopGUI() {
 			t.Errorf("expected IsDesktopGUI() to be true when WAYLAND_DISPLAY is set")
+		}
+
+		_ = os.Unsetenv("WAYLAND_DISPLAY")
+		_ = os.Setenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/run/user/1000/bus")
+		if !IsDesktopGUI() {
+			t.Errorf("expected IsDesktopGUI() to be true when DBUS_SESSION_BUS_ADDRESS is set")
 		}
 
 	case "darwin":
@@ -67,20 +76,41 @@ func TestIsDesktopGUI(t *testing.T) {
 func TestOpenBrowserFunction(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		origCmd := openBrowserCmd
-		defer func() { openBrowserCmd = origCmd }()
+		origPortal := openViaDBusPortal
+		defer func() {
+			openBrowserCmd = origCmd
+			openViaDBusPortal = origPortal
+		}()
 
+		// Test successful D-Bus portal call
+		portalCalled := false
+		openViaDBusPortal = func(url string) error {
+			portalCalled = true
+			return nil
+		}
+
+		if err := openBrowserPlatform("http://127.0.0.1:8080"); err != nil {
+			t.Errorf("expected openBrowserPlatform to succeed with portal, got: %v", err)
+		}
+		if !portalCalled {
+			t.Errorf("expected openViaDBusPortal to be called")
+		}
+
+		// Test fallback to xdg-open when D-Bus fails
+		openViaDBusPortal = func(url string) error {
+			return os.ErrNotExist
+		}
+		cmdCalled := false
 		openBrowserCmd = func(url string) *exec.Cmd {
+			cmdCalled = true
 			return exec.Command("true")
 		}
 
-		if err := OpenBrowser("http://127.0.0.1:8080"); err != nil {
-			t.Errorf("expected OpenBrowser to succeed with mock cmd, got: %v", err)
+		if err := openBrowserPlatform("http://127.0.0.1:8080"); err != nil {
+			t.Errorf("expected openBrowserPlatform to succeed with fallback, got: %v", err)
 		}
-
-		// Test default openBrowserCmd
-		cmd := origCmd("http://127.0.0.1:8080")
-		if cmd == nil || len(cmd.Args) < 2 || cmd.Args[0] != "xdg-open" {
-			t.Errorf("unexpected cmd: %+v", cmd)
+		if !cmdCalled {
+			t.Errorf("expected openBrowserCmd fallback to be called")
 		}
 	}
 }

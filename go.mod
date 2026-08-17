@@ -7,6 +7,7 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/dop251/goja v0.0.0-20260106131823-651366fbe6e3
 	github.com/evanw/esbuild v0.27.2
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/invopop/jsonschema v0.13.0
 	golang.org/x/sys v0.47.0
 	gopkg.in/yaml.v3 v3.0.1
