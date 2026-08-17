@@ -79,8 +79,11 @@ func run(args []string) int {
 	}
 
 	// Validate (builder allows funcFile)
-	if err := playbook.ValidateConfig(*config, false); err != nil {
-		fmt.Printf("❌ Validation Error: %v\n", err)
+	if errs := config.Validate(false); len(errs) > 0 {
+		fmt.Println("❌ Playbook Validation Failed:")
+		for _, err := range errs {
+			fmt.Printf("  • %s\n", err.Error())
+		}
 		return 1
 	}
 

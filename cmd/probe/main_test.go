@@ -23,7 +23,7 @@ func TestProbeRun(t *testing.T) {
 	pbContent := `
 title: Test
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
@@ -58,7 +58,7 @@ sections:
 	validationErrPbContent := `
 title: Test
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
@@ -78,7 +78,7 @@ sections:
 	failingPbContent := `
 title: Test
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: F1
         title: F1
@@ -93,24 +93,32 @@ sections:
 		t.Errorf("Expected exit code 1 for failing assertion, got %d", code)
 	}
 
-	// 8. Test DispatchReport failure
+	// 8. Test worker error
+	if code := run([]string{"-worker", "invalid-worker-address"}); code != 1 {
+		t.Errorf("Expected exit code 1 for invalid worker socket, got %d", code)
+	}
+
+	// 9. Test DispatchReport network failure (valid config, but endpoint unreachable)
 	dispatchErrPbPath := filepath.Join(tmpDir, "dispatch_err.yaml")
 	dispatchErrPbContent := `
 title: Dispatch Error
 reportDestination: https
+destinationConfig:
+  url: "http://127.0.0.1:1/nonexistent"
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
         cmds:
           - exec:
-              script: echo
+              script: echo hello
 `
 	if err := os.WriteFile(dispatchErrPbPath, []byte(dispatchErrPbContent), 0644); err != nil {
 		t.Fatal(err)
 	}
-	if code := run([]string{dispatchErrPbPath}); code != 1 {
-		t.Errorf("Expected exit code 1 for dispatch error, got %d", code)
+	if code := run([]string{"-folder", tmpDir, dispatchErrPbPath}); code != 1 {
+		t.Errorf("Expected exit code 1 for dispatch network error, got %d", code)
 	}
 }
+

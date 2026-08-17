@@ -11,7 +11,6 @@ import (
 	"github.com/benedictjohannes/crobe/internal/elevation"
 	"github.com/benedictjohannes/crobe/internal/headerflags"
 	"github.com/benedictjohannes/crobe/internal/reportwriter"
-	"github.com/benedictjohannes/crobe/playbook"
 	"github.com/benedictjohannes/crobe/report"
 )
 
@@ -57,8 +56,11 @@ func run(args []string) int {
 	// TODO this line to below are not covered by tests
 
 	// Validate as Agent
-	if err := playbook.ValidateConfig(*config, true); err != nil {
-		fmt.Printf("❌ Validation Error: %v\n", err)
+	if errs := config.Validate(true); len(errs) > 0 {
+		fmt.Println("❌ Playbook Validation Failed:")
+		for _, err := range errs {
+			fmt.Printf("  • %s\n", err.Error())
+		}
 		return 1
 	}
 

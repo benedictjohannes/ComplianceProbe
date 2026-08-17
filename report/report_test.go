@@ -137,36 +137,41 @@ func TestGenerateReport_Formatting(t *testing.T) {
 	}
 }
 
-func TestLogExecution_Extended(t *testing.T) {
-	var log strings.Builder
-
-	// Multiline script
-	execMultiline := playbook.Exec{Script: "line1\nline2"}
+func TestWriteExecutionLog(t *testing.T) {
 	res := executor.ExecutionResult{Stdout: "out\n", Stderr: "err\n", ExitCode: 0}
-	writeExecutionLog(&log, execMultiline, res, nil)
 
-	logStr := log.String()
-	if !strings.Contains(logStr, "SCRIPT") || !strings.Contains(logStr, "<<<<< END SCRIPT") {
-		t.Errorf("Multiline script logging failed")
-	}
+	t.Run("MultilineScript", func(t *testing.T) {
+		var log strings.Builder
+		execMultiline := playbook.Exec{Script: "line1\nline2"}
+		writeExecutionLog(&log, execMultiline, res, nil)
 
-	// Error case
-	log.Reset()
-	execErr := playbook.Exec{Script: "fail"}
-	writeExecutionLog(&log, execErr, res, fmt.Errorf("some error"))
-	logStr = log.String()
-	if !strings.Contains(logStr, "ERROR: some error") {
-		t.Errorf("Error logging failed")
-	}
+		logStr := log.String()
+		if !strings.Contains(logStr, "SCRIPT") || !strings.Contains(logStr, "<<<<< END SCRIPT") {
+			t.Errorf("Multiline script logging failed: %q", logStr)
+		}
+	})
 
-	// Redacted case
-	log.Reset()
-	execRedacted := playbook.Exec{Script: "secret", ExcludeFromReport: true}
-	writeExecutionLog(&log, execRedacted, res, nil)
-	logStr = log.String()
-	if !strings.Contains(logStr, "[REDACTED]") {
-		t.Errorf("Redaction in logging failed")
-	}
+	t.Run("ExecutionError", func(t *testing.T) {
+		var log strings.Builder
+		execErr := playbook.Exec{Script: "fail"}
+		writeExecutionLog(&log, execErr, res, fmt.Errorf("some error"))
+
+		logStr := log.String()
+		if !strings.Contains(logStr, "ERROR: some error") {
+			t.Errorf("Error logging failed: %q", logStr)
+		}
+	})
+
+	t.Run("Redacted", func(t *testing.T) {
+		var log strings.Builder
+		execRedacted := playbook.Exec{Script: "secret", ExcludeFromReport: true}
+		writeExecutionLog(&log, execRedacted, res, nil)
+
+		logStr := log.String()
+		if !strings.Contains(logStr, "[REDACTED]") {
+			t.Errorf("Redaction in logging failed: %q", logStr)
+		}
+	})
 }
 
 func TestIsEvidenceMaterial(t *testing.T) {

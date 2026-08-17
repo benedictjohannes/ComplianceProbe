@@ -228,7 +228,7 @@ func TestBakeFile(t *testing.T) {
 	rawYaml := `
 title: "Bake Test"
 sections:
-  - title: "S1"
+  - title: "Section 1"
     assertions:
       - code: A1
         title: "T1"
@@ -303,7 +303,16 @@ sections:
 
 	// 4. Write error
 	inputPath = filepath.Join(tmpDir, "valid.yaml")
-	rawYaml = `title: "Valid"`
+	rawYaml = `
+title: "Valid Playbook"
+sections:
+  - title: "Section 1"
+    assertions:
+      - code: "SEC01"
+        title: "Assertion 1"
+        cmds:
+          - exec: { script: "echo 1" }
+`
 	if err := os.WriteFile(inputPath, []byte(rawYaml), 0644); err != nil {
 		t.Fatal(err)
 	}

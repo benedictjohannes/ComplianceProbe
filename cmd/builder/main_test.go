@@ -29,7 +29,7 @@ func TestBuilderRun(t *testing.T) {
 	inputContent := `
 title: Raw
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
@@ -55,7 +55,7 @@ sections:
 	invalidContent := `
 title: Invalid
 sections:
-  - title: S1
+  - title: Section 1
     description: [D1]
     assertions:
       - code: T1
@@ -71,7 +71,7 @@ sections:
 	pbContent := `
 title: Test Run
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
@@ -94,7 +94,7 @@ sections:
 	missingFuncFileContent := `
 title: Missing Func
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1
@@ -122,7 +122,7 @@ sections:
 	failingPbContent := `
 title: Failing
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: F1
         title: F1
@@ -139,7 +139,7 @@ sections:
 title: Dispatch Error
 reportDestination: https
 sections:
-  - title: S1
+  - title: Section 1
     assertions:
       - code: T1
         title: T1

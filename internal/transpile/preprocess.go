@@ -27,8 +27,8 @@ func BakeFile(inputPath, outputPath string) error {
 		return err
 	}
 
-	if err := playbook.ValidateConfig(*config, false); err != nil {
-		return fmt.Errorf("validation error: %w", err)
+	if errs := config.Validate(false); len(errs) > 0 {
+		return fmt.Errorf("validation error: %w", errs)
 	}
 
 	outData, err := yaml.Marshal(config)

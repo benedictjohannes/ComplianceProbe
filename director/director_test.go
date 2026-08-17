@@ -128,10 +128,10 @@ func TestExcludeFromReport(t *testing.T) {
 	}
 }
 
-func TestDirector_Advanced(t *testing.T) {
+func TestDirector_AssertionPipeline_GatherAndOutputs(t *testing.T) {
 	minScore := 1
 	config := playbook.Playbook{
-		Title: "Advanced Test",
+		Title: "Advanced Pipeline Test",
 		ReportFrontmatter: map[string]interface{}{
 			"custom": "value",
 		},
@@ -144,7 +144,13 @@ func TestDirector_Advanced(t *testing.T) {
 						Title:           "Advanced Assertion",
 						MinPassingScore: &minScore,
 						PreCmds: []playbook.Exec{
-							{Script: "pre-cmd", Gather: []playbook.GatherSpec{{Key: "pre", Regex: "(.*)"}}},
+							{
+								Script: "pre-cmd",
+								Gather: []playbook.GatherSpec{
+									{Key: "pre", Regex: "(.*)"},
+									{Key: "pre_secret", Regex: "(.*)", ExcludeFromReport: true},
+								},
+							},
 						},
 						Cmds: []playbook.Cmd{
 							{
@@ -155,9 +161,24 @@ func TestDirector_Advanced(t *testing.T) {
 								},
 								StdOutRule: playbook.EvaluationRule{Regex: "SUCCESS"},
 							},
+							{
+								Exec:       playbook.Exec{Script: "cmd-mixed"},
+								StdErrRule: playbook.EvaluationRule{Regex: "WARN_MATCH"},
+							},
+							{
+								Exec: playbook.Exec{Script: "cmd-stderr-only"},
+							},
+							{
+								Exec: playbook.Exec{Script: "cmd-redacted", ExcludeFromReport: true},
+							},
 						},
 						PostCmds: []playbook.Exec{
-							{Script: "post-cmd"},
+							{
+								Script: "post-cmd",
+								Gather: []playbook.GatherSpec{
+									{Key: "post_secret", Regex: "(.*)", ExcludeFromReport: true},
+								},
+							},
 						},
 						PassDescription: "Passed!",
 						FailDescription: "Failed!",
@@ -168,23 +189,83 @@ func TestDirector_Advanced(t *testing.T) {
 	}
 
 	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
-		if e.Script == "pre-cmd" {
+		switch e.Script {
+		case "pre-cmd":
 			context["pre"] = "pre-val"
+			context["pre_secret"] = "pre-secret-val"
+			return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
+		case "main-cmd":
+			return executor.ExecutionResult{ExitCode: 0, Success: true, Stdout: "SUCCESS"}, nil
+		case "cmd-mixed":
+			return executor.ExecutionResult{
+				Stdout:   "stdout-data",
+				Stderr:   "WARN_MATCH",
+				ExitCode: 0,
+				Success:  true,
+			}, nil
+		case "cmd-stderr-only":
+			return executor.ExecutionResult{
+				Stdout:   "",
+				Stderr:   "err-only-data",
+				ExitCode: 0,
+				Success:  true,
+			}, nil
+		case "cmd-redacted":
+			return executor.ExecutionResult{
+				Stdout:   "top-secret",
+				ExitCode: 0,
+				Success:  true,
+			}, nil
+		case "post-cmd":
+			context["post_secret"] = "post-secret-val"
+			return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
+		default:
 			return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
 		}
-		if e.Script == "main-cmd" {
-			return executor.ExecutionResult{ExitCode: 0, Success: true, Stdout: "SUCCESS"}, nil
-		}
-		return executor.ExecutionResult{ExitCode: 0, Success: true}, nil
 	}
 
 	runExec = mockExec
 	trace := Run(context.Background(), config)
-	
 	ass := trace.Sections[0].Assertions[0]
-	if ass.Context["pre"] != "pre-val" {
-		t.Errorf("Context missing pre-command value: %v", ass.Context)
-	}
+
+	t.Run("ContextAndRedaction", func(t *testing.T) {
+		if ass.Context["pre"] != "pre-val" {
+			t.Errorf("Context missing pre-command value: %v", ass.Context)
+		}
+		if _, exists := ass.Context["pre_secret"]; exists {
+			t.Errorf("expected 'pre_secret' key to be excluded from report context")
+		}
+		if _, exists := ass.Context["post_secret"]; exists {
+			t.Errorf("expected 'post_secret' key to be excluded from report context")
+		}
+	})
+
+	t.Run("OutputsAggregationAndFormatting", func(t *testing.T) {
+		expectedOutputs := []string{
+			"SUCCESS",
+			"# --- STDOUT ---",
+			"stdout-data",
+			"# --- STDERR ---",
+			"WARN_MATCH",
+			"# --- STDERR ---",
+			"err-only-data",
+			"[REDACTED]",
+		}
+		if len(ass.Outputs) != len(expectedOutputs) {
+			t.Fatalf("expected %d output entries, got %d: %v", len(expectedOutputs), len(ass.Outputs), ass.Outputs)
+		}
+		for i, exp := range expectedOutputs {
+			if ass.Outputs[i] != exp {
+				t.Errorf("ass.Outputs[%d] = %q; want %q", i, ass.Outputs[i], exp)
+			}
+		}
+	})
+
+	t.Run("PassEvaluation", func(t *testing.T) {
+		if !ass.Passed {
+			t.Errorf("expected assertion to pass")
+		}
+	})
 }
 
 func TestDirector_ErrorCases(t *testing.T) {
@@ -255,7 +336,7 @@ func TestDirector_EnvUsage(t *testing.T) {
 
 	runExec = mockExec
 	trace := Run(context.Background(), config)
-	
+
 	if trace.Username != "testuser" {
 		t.Errorf("Username = %s; want testuser", trace.Username)
 	}
@@ -292,7 +373,7 @@ func TestDirector_DefaultExitCode(t *testing.T) {
 
 	runExec = mockExec
 	trace := Run(context.Background(), config)
-	
+
 	if !trace.Sections[0].Assertions[0].Passed {
 		t.Errorf("E_PASS should have passed")
 	}
@@ -301,90 +382,54 @@ func TestDirector_DefaultExitCode(t *testing.T) {
 	}
 }
 
-func TestDirector_CoverageBoost(t *testing.T) {
-	oldOS := goos
-	goos = "darwin"
-	defer func() { goos = oldOS }()
+func TestDirector_OSNormalization(t *testing.T) {
+	tests := []struct {
+		goos string
+		want string
+	}{
+		{goos: "darwin", want: "mac"},
+		{goos: "linux", want: "linux"},
+		{goos: "windows", want: "windows"},
+	}
 
+	for _, tt := range tests {
+		t.Run(tt.goos, func(t *testing.T) {
+			oldOS := goos
+			goos = tt.goos
+			defer func() { goos = oldOS }()
+
+			trace := Run(context.Background(), playbook.Playbook{Title: "OS Test"})
+			if trace.OS != tt.want {
+				t.Errorf("trace.OS = %q; want %q for GOOS %q", trace.OS, tt.want, tt.goos)
+			}
+		})
+	}
+}
+
+func TestRun_Basic(t *testing.T) {
+	runExec = func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
+		return executor.ExecutionResult{ExitCode: 0, Success: true, Stdout: "ok"}, nil
+	}
 	config := playbook.Playbook{
-		Title: "Boost Test",
+		Title: "Run Basic Playbook",
 		Sections: []playbook.Section{
 			{
-				Title: "S1",
+				Title: "Sec1",
 				Assertions: []playbook.Assertion{
 					{
-						Code: "B_01",
-						PreCmds: []playbook.Exec{
-							{
-								Script: "pre-gather",
-								Gather: []playbook.GatherSpec{
-									{Key: "pre_secret", Regex: "(.*)", ExcludeFromReport: true},
-								},
-							},
-						},
-						Cmds: []playbook.Cmd{
-							{
-								Exec: playbook.Exec{Script: "cmd-mixed"},
-								StdErrRule: playbook.EvaluationRule{Regex: "ERROR_MATCH"},
-							},
-							{
-								Exec: playbook.Exec{Script: "cmd-stderr-only"},
-							},
-						},
-						PostCmds: []playbook.Exec{
-							{
-								Script: "post-gather",
-								Gather: []playbook.GatherSpec{
-									{Key: "post_secret", Regex: "(.*)", ExcludeFromReport: true},
-								},
-							},
-						},
+						Code:  "A1",
+						Title: "Ass1",
+						Cmds:  []playbook.Cmd{{Exec: playbook.Exec{Script: "echo ok"}}},
 					},
 				},
 			},
 		},
 	}
-
-	mockExec := func(ctx context.Context, e *playbook.Exec, context map[string]interface{}) (executor.ExecutionResult, error) {
-		if e.Script == "pre-gather" {
-			context["pre_secret"] = "pre-secret-val"
-			return executor.ExecutionResult{Success: true}, nil
-		}
-		if e.Script == "cmd-mixed" {
-			return executor.ExecutionResult{
-				Stdout:   "some stdout",
-				Stderr:   "ERROR_MATCH",
-				ExitCode: 0,
-				Success:  true,
-			}, nil
-		}
-		if e.Script == "cmd-stderr-only" {
-			return executor.ExecutionResult{
-				Stdout:   "",
-				Stderr:   "just stderr",
-				ExitCode: 0,
-				Success:  true,
-			}, nil
-		}
-		if e.Script == "post-gather" {
-			context["post_secret"] = "secret-val"
-			return executor.ExecutionResult{Success: true}, nil
-		}
-		return executor.ExecutionResult{Success: true}, nil
-	}
-
-	runExec = mockExec
 	trace := Run(context.Background(), config)
-	
-	if trace.OS != "mac" {
-		t.Errorf("OS = %s; want mac", trace.OS)
-	}
-
-	ass := trace.Sections[0].Assertions[0]
-	if _, exists := ass.Context["pre_secret"]; exists {
-		t.Errorf("pre_secret should be excluded from report context")
-	}
-	if _, exists := ass.Context["post_secret"]; exists {
-		t.Errorf("post_secret should be excluded from report context")
+	if trace.TotalPassed != 1 {
+		t.Errorf("expected 1 passed in Run, got %d", trace.TotalPassed)
 	}
 }
+
+
+
