@@ -10,3 +10,4 @@ playbook-windows.yaml
 !playbook.schema.json
 coverage.*
 crobe*
+webui/node_modules
