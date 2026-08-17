@@ -70,6 +70,26 @@ describe('AppState Store', () => {
     expect(state.logs).toEqual([]);
   });
 
+  it('reconcileState: should ignore invalid or malformed responses and log a warning', () => {
+    state.status = 'loaded';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // @ts-expect-error test invalid payload
+    state.reconcileState(null);
+    expect(state.status).toBe('loaded');
+    expect(warnSpy).toHaveBeenCalled();
+
+    // @ts-expect-error test payload without status
+    state.reconcileState({ errors: [] });
+    expect(state.status).toBe('loaded');
+
+    // @ts-expect-error test invalid state_change
+    state.handleStateChange(null, 10);
+    expect(state.status).toBe('loaded');
+
+    warnSpy.mockRestore();
+  });
+
   it('reconcileExecution: should reconstruct snapshot and compute metrics', () => {
     const mockSnapshot: ExecutionSnapshot = {
       run_id: 'run-99',

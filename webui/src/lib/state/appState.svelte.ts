@@ -168,12 +168,19 @@ export class AppState {
   // --- Snapshot Reconciliation ---
 
   reconcileState(resp: AppStateResponse): void {
+    if (!resp || typeof resp.status !== 'string') {
+      console.warn('[AppState] Received invalid state response:', resp);
+      return;
+    }
+
     this.status = resp.status;
     this.errors = resp.errors ? [...resp.errors] : [];
-    this.reportDestination = resp.report_destination;
+    if (resp.report_destination) {
+      this.reportDestination = resp.report_destination;
+    }
     this.activeRunId = resp.active_run_id;
 
-    if (resp.status === 'idle') {
+    if (this.status === 'idle') {
       this.playbook = null;
       this.execution = null;
       this.logs = [];
@@ -201,7 +208,7 @@ export class AppState {
       this.reconcileState(stateResp);
 
       // 2. Fetch playbook if loaded or in progress
-      if (stateResp.status !== 'idle') {
+      if (this.status !== 'idle') {
         try {
           this.playbook = await this.client.getPlaybook();
         } catch (e) {
@@ -212,7 +219,7 @@ export class AppState {
       }
 
       // 3. Fetch execution snapshot if running or completed
-      if (stateResp.status.startsWith('running') || stateResp.status.startsWith('completed')) {
+      if (this.status.startsWith('running') || this.status.startsWith('completed')) {
         try {
           const execSnapshot = await this.client.getExecution();
           this.reconcileExecution(execSnapshot);
@@ -231,6 +238,11 @@ export class AppState {
   // --- SSE Event Handlers ---
 
   handleStateChange(data: AppStateResponse, eventId: number): void {
+    if (!data || typeof data.status !== 'string') {
+      console.warn('[AppState] Received invalid state_change event payload:', data);
+      return;
+    }
+
     if (eventId > this.lastEventId) {
       this.lastEventId = eventId;
     }
@@ -239,7 +251,7 @@ export class AppState {
     this.reconcileState(data);
 
     // If transitioned to loaded from idle/error, fetch playbook if missing
-    if (data.status === 'loaded' && (!this.playbook || previousStatus !== 'loaded')) {
+    if (this.status === 'loaded' && (!this.playbook || previousStatus !== 'loaded')) {
       this.client
         .getPlaybook()
         .then((pb) => {
@@ -251,7 +263,7 @@ export class AppState {
     }
 
     // If transitioned to running and execution is missing, initialize or fetch snapshot
-    if (data.status.startsWith('running') && !this.execution && data.active_run_id) {
+    if (this.status.startsWith('running') && !this.execution && data.active_run_id) {
       this.client
         .getExecution()
         .then((exec) => {
@@ -261,7 +273,7 @@ export class AppState {
           // Initialize placeholder if snapshot GET failed
           this.execution = {
             run_id: data.active_run_id ?? 'run',
-            status: data.status,
+            status: this.status,
             last_event_id: eventId,
             duration_ms: 0,
             assertions: [],
