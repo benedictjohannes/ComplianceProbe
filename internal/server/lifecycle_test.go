@@ -7,7 +7,7 @@ import (
 )
 
 func TestLifecycleManagerGracePeriodAndShutdown(t *testing.T) {
-	sm := NewStateManager("")
+	sm := NewStateManager("", true)
 	var shutdownCalled bool
 	var mu sync.Mutex
 
@@ -48,7 +48,7 @@ func TestLifecycleManagerGracePeriodAndShutdown(t *testing.T) {
 }
 
 func TestLifecycleManagerClientConnectionCancelsIdle(t *testing.T) {
-	sm := NewStateManager("")
+	sm := NewStateManager("", true)
 	var shutdownCalled bool
 	var mu sync.Mutex
 
@@ -109,7 +109,7 @@ func TestLifecycleManagerClientConnectionCancelsIdle(t *testing.T) {
 }
 
 func TestLifecycleManagerExecutionInhibitsShutdown(t *testing.T) {
-	sm := NewStateManager("")
+	sm := NewStateManager("", true)
 	// Set status to running
 	sm.SetStatus(StatusRunning)
 

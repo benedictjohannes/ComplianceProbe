@@ -51,7 +51,7 @@ func NewServer(cfg Config) (*Server, error) {
 	}
 
 	broker := NewEventBroker()
-	state := NewStateManager(cfg.CLIFolder)
+	state := NewStateManager(cfg.CLIFolder, true)
 
 	s := &Server{
 		config:       cfg,

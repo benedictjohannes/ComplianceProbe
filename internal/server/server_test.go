@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -456,8 +457,9 @@ func TestServer_DestinationUpdates(t *testing.T) {
 	_ = json.NewDecoder(resp.Body).Decode(&stateResp)
 	resp.Body.Close()
 
-	if stateResp.ReportDestination.Folder != customFolder {
-		t.Errorf("folder = %q, want %q", stateResp.ReportDestination.Folder, customFolder)
+	expectedFolder, _ := filepath.Abs(customFolder)
+	if stateResp.ReportDestination.Folder != expectedFolder {
+		t.Errorf("folder = %q, want %q", stateResp.ReportDestination.Folder, expectedFolder)
 	}
 	if stateResp.ReportDestination.HttpsSource != server.HttpsSourceCustom {
 		t.Errorf("https_source = %s, want %s", stateResp.ReportDestination.HttpsSource, server.HttpsSourceCustom)

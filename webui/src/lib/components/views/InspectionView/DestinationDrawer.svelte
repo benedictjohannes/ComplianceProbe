@@ -218,7 +218,7 @@
             <Badge variant="info" size="sm" class="text-[10px]">--folder</Badge>
           </div>
           <p class="text-xs font-mono text-zinc-600 dark:text-zinc-400 select-all">
-            {destination.folder || '~/.local/state/crobe/runs/'}
+            {destination.folder || './reports/'}
           </p>
         </div>
       {:else}
@@ -236,7 +236,7 @@
                 class="sr-only"
               />
               <span class="text-xs font-semibold">Default</span>
-              <span class="text-[10px] text-zinc-500 mt-0.5">~/.local/state/</span>
+              <span class="text-[10px] text-zinc-500 mt-0.5">./reports/</span>
             </label>
 
             <label

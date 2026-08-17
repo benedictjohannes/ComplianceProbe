@@ -1,13 +1,18 @@
 package server
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/benedictjohannes/crobe/playbook"
+	"github.com/benedictjohannes/crobe/report"
 )
 
 func TestStateManager(t *testing.T) {
-	sm := NewStateManager("cli-reports-folder")
+	sm := NewStateManager("cli-reports-folder", true)
 
 	// Initial status
 	if sm.GetStatus() != StatusIdle {
@@ -92,3 +97,160 @@ func TestStateManager(t *testing.T) {
 		t.Errorf("expected load error in sm.errors, got %+v", sm.errors)
 	}
 }
+
+func TestStateManager_UI_Destinations(t *testing.T) {
+	// 1. Playbook with HTTPS and Folder in UI mode (independent destinations)
+	sm := NewStateManager("", true)
+	pb := &playbook.Playbook{
+		Title:                   "Multi Output Playbook",
+		ReportDestination:       playbook.ReportDestinationHTTPS,
+		ReportDestinationFolder: "custom-folder",
+		ReportDestinationHTTPS: &playbook.ReportDestinationConfig{
+			URL: "https://example.com/ingest",
+		},
+		Sections: []playbook.Section{
+			{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+		},
+	}
+	sm.SetPlaybook(pb, []byte("..."), nil)
+
+	dest := sm.ReportDestination()
+	if dest.FolderSource != FolderSourcePlaybook || dest.Folder != resolveFolderPath("custom-folder") {
+		t.Errorf("expected FolderSourcePlaybook with resolveFolderPath('custom-folder'), got %s (%s)", dest.FolderSource, dest.Folder)
+	}
+	if dest.HttpsSource != HttpsSourcePlaybook {
+		t.Errorf("expected HttpsSourcePlaybook in UI mode, got %s", dest.HttpsSource)
+	}
+}
+
+func TestStateManager_DirectCLI_Destinations(t *testing.T) {
+	// 1. Playbook specifies HTTPS in Direct CLI mode -> Folder is Off
+	sm := NewStateManager("", false)
+	pb := &playbook.Playbook{
+		Title:             "HTTPS Playbook",
+		ReportDestination: playbook.ReportDestinationHTTPS,
+		ReportDestinationHTTPS: &playbook.ReportDestinationConfig{
+			URL: "https://example.com/ingest",
+		},
+		Sections: []playbook.Section{
+			{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+		},
+	}
+	sm.SetPlaybook(pb, []byte("..."), nil)
+
+	dest := sm.ReportDestination()
+	if dest.FolderSource != FolderSourceOff {
+		t.Errorf("expected FolderSourceOff in Direct CLI mode for HTTPS playbook, got %s", dest.FolderSource)
+	}
+	if dest.HttpsSource != HttpsSourcePlaybook {
+		t.Errorf("expected HttpsSourcePlaybook, got %s", dest.HttpsSource)
+	}
+
+	// 2. CLI --folder flag overrides HTTPS destination in Direct CLI mode
+	smCLI := NewStateManager("/custom/cli/path", false)
+	smCLI.SetPlaybook(pb, []byte("..."), nil)
+
+	destCLI := smCLI.ReportDestination()
+	if destCLI.FolderSource != FolderSourceCLI || destCLI.Folder != resolveFolderPath("/custom/cli/path") {
+		t.Errorf("expected FolderSourceCLI with resolveFolderPath('/custom/cli/path'), got %s (%s)", destCLI.FolderSource, destCLI.Folder)
+	}
+	if destCLI.HttpsSource != HttpsSourceOff {
+		t.Errorf("expected HttpsSourceOff when CLI folder flag overrides, got %s", destCLI.HttpsSource)
+	}
+
+	// 3. Playbook default (empty/folder) in Direct CLI mode
+	smDefault := NewStateManager("", false)
+	pbFolder := &playbook.Playbook{
+		Title: "Folder Playbook",
+		Sections: []playbook.Section{
+			{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+		},
+	}
+	smDefault.SetPlaybook(pbFolder, []byte("..."), nil)
+
+	destDefault := smDefault.ReportDestination()
+	if destDefault.FolderSource != FolderSourceDefault || destDefault.Folder != resolveFolderPath("reports") {
+		t.Errorf("expected FolderSourceDefault with resolveFolderPath('reports'), got %s (%s)", destDefault.FolderSource, destDefault.Folder)
+	}
+	if destDefault.HttpsSource != HttpsSourceOff {
+		t.Errorf("expected HttpsSourceOff for default folder playbook, got %s", destDefault.HttpsSource)
+	}
+}
+
+func TestStateManager_DispatchReport(t *testing.T) {
+	res := report.FinalResult{
+		Structured: report.FinalReport{
+			Username: "testuser",
+		},
+		Markdown: "# Test",
+		Log:      "test log",
+	}
+
+	t.Run("folder dispatch", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "sm-dispatch-folder-*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		sm := NewStateManager(tmpDir, false)
+		pb := &playbook.Playbook{
+			Title: "Test",
+			Sections: []playbook.Section{
+				{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+			},
+		}
+		sm.SetPlaybook(pb, []byte("..."), nil)
+
+		if err := sm.DispatchReport(res); err != nil {
+			t.Fatalf("DispatchReport failed: %v", err)
+		}
+
+		files, _ := os.ReadDir(tmpDir)
+		if len(files) != 3 {
+			t.Errorf("expected 3 report files, got %d", len(files))
+		}
+	})
+
+	t.Run("https dispatch success", func(t *testing.T) {
+		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+
+		sm := NewStateManager("", false)
+		pb := &playbook.Playbook{
+			Title:             "Test HTTPS",
+			ReportDestination: playbook.ReportDestinationHTTPS,
+			ReportDestinationHTTPS: &playbook.ReportDestinationConfig{
+				URL: server.URL,
+			},
+			Sections: []playbook.Section{
+				{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+			},
+		}
+		sm.SetPlaybook(pb, []byte("..."), nil)
+
+		if err := sm.DispatchReport(res); err != nil {
+			t.Fatalf("DispatchReport to HTTPS failed: %v", err)
+		}
+	})
+
+	t.Run("https dispatch missing config error", func(t *testing.T) {
+		sm := NewStateManager("", false)
+		pb := &playbook.Playbook{
+			Title:             "Test HTTPS",
+			ReportDestination: playbook.ReportDestinationHTTPS,
+			Sections: []playbook.Section{
+				{Title: "S1", Assertions: []playbook.Assertion{{Code: "A1", Title: "A1"}}},
+			},
+		}
+		sm.SetPlaybook(pb, []byte("..."), nil)
+
+		err := sm.DispatchReport(res)
+		if err == nil || !strings.Contains(err.Error(), "reportDestinationHttps configuration is missing") {
+			t.Errorf("expected error for missing HTTPS config, got %v", err)
+		}
+	})
+}
+

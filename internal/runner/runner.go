@@ -16,7 +16,6 @@ import (
 	"github.com/benedictjohannes/crobe/internal/desktop"
 	"github.com/benedictjohannes/crobe/internal/elevation"
 	"github.com/benedictjohannes/crobe/internal/headerflags"
-	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/internal/server"
 	"github.com/benedictjohannes/crobe/playbook"
 	"github.com/benedictjohannes/crobe/report"
@@ -148,18 +147,21 @@ func Run(args []string, opts Options) int {
 	}
 
 	// Headless CLI execution
-	reportwriter.DefaultReportsDir = *folderFlag
+	state := server.NewStateManager(*folderFlag, false)
 
-	config, _, err := configsource.LoadConfig(configPath, headers)
+	config, rawBytes, err := configsource.LoadConfig(configPath, headers)
 	if err != nil {
 		fmt.Printf("❌ Failed to load playbook %s: %v\n", configPath, err)
 		return 1
 	}
 
+	valErrors := config.Validate(opts.IsAgent)
+	state.SetPlaybook(config, rawBytes, valErrors)
+
 	// Validate
-	if errs := config.Validate(opts.IsAgent); len(errs) > 0 {
+	if len(valErrors) > 0 {
 		fmt.Println("❌ Playbook Validation Failed:")
-		for _, err := range errs {
+		for _, err := range valErrors {
 			fmt.Printf("  • %s\n", err.Error())
 		}
 		return 1
@@ -182,7 +184,7 @@ func Run(args []string, opts Options) int {
 
 	trace := director.Run(context.Background(), *config)
 	result := report.GenerateReport(trace)
-	if err := reportwriter.DispatchReport(config, result); err != nil {
+	if err := state.DispatchReport(result); err != nil {
 		fmt.Printf("❌ Reporting Error: %v\n", err)
 		return 1
 	}

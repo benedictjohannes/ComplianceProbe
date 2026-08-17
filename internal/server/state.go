@@ -3,12 +3,24 @@ package server
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/benedictjohannes/crobe/internal/reportwriter"
 	"github.com/benedictjohannes/crobe/playbook"
 	"github.com/benedictjohannes/crobe/report"
 )
+
+func resolveFolderPath(dir string) string {
+	if dir == "" {
+		dir = "reports"
+	}
+	if abs, err := filepath.Abs(dir); err == nil {
+		return abs
+	}
+	return dir
+}
 
 // StateManager is the central thread-safe state container.
 type StateManager struct {
@@ -18,6 +30,7 @@ type StateManager struct {
 	errors            []AppError
 	reportDestination ReportDestinationState
 	cliFolder         string
+	isUI              bool
 
 	playbook    *playbook.Playbook
 	playbookRaw []byte
@@ -33,12 +46,11 @@ type StateManager struct {
 }
 
 // NewStateManager creates a new initialized StateManager.
-func NewStateManager(cliFolder string) *StateManager {
+func NewStateManager(cliFolder string, isUI bool) *StateManager {
 	folderSource := FolderSourceDefault
-	folderPath := "reports"
+	folderPath := resolveFolderPath(cliFolder)
 	if cliFolder != "" {
 		folderSource = FolderSourceCLI
-		folderPath = cliFolder
 	}
 
 	return &StateManager{
@@ -50,6 +62,7 @@ func NewStateManager(cliFolder string) *StateManager {
 			HttpsSource:  HttpsSourceOff,
 		},
 		cliFolder: cliFolder,
+		isUI:      isUI,
 		snapshot: ExecutionSnapshot{
 			Status:     StatusIdle,
 			Assertions: make([]AssertionSnapshot, 0),
@@ -76,6 +89,13 @@ func (sm *StateManager) GetStateResponse() AppStateResponse {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	return sm.getStateResponseLocked()
+}
+
+// ReportDestination returns the active report destination configuration.
+func (sm *StateManager) ReportDestination() ReportDestinationState {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.reportDestination
 }
 
 // CanMutate checks if mutation requests are allowed.
@@ -124,29 +144,54 @@ func (sm *StateManager) SetPlaybook(pb *playbook.Playbook, raw []byte, valErrors
 
 	defaults := &PlaybookDestinationDefaults{
 		HasFolder:  pb.ReportDestinationFolder != "",
-		FolderPath: pb.ReportDestinationFolder,
+		FolderPath: resolveFolderPath(pb.ReportDestinationFolder),
 		HasHTTPS:   hasHttps,
 		HTTPS:      httpsInspection,
 	}
 	sm.reportDestination.PlaybookDefaults = defaults
 
-	// Set folder destination
-	if sm.cliFolder != "" {
-		sm.reportDestination.FolderSource = FolderSourceCLI
-		sm.reportDestination.Folder = sm.cliFolder
-	} else if pb.ReportDestinationFolder != "" {
-		sm.reportDestination.FolderSource = FolderSourcePlaybook
-		sm.reportDestination.Folder = pb.ReportDestinationFolder
-	} else {
-		sm.reportDestination.FolderSource = FolderSourceDefault
-		sm.reportDestination.Folder = "reports"
-	}
+	if sm.isUI {
+		// Web UI mode: Independent destinations
+		// Set folder destination
+		if sm.cliFolder != "" {
+			sm.reportDestination.FolderSource = FolderSourceCLI
+			sm.reportDestination.Folder = resolveFolderPath(sm.cliFolder)
+		} else if pb.ReportDestinationFolder != "" {
+			sm.reportDestination.FolderSource = FolderSourcePlaybook
+			sm.reportDestination.Folder = resolveFolderPath(pb.ReportDestinationFolder)
+		} else {
+			sm.reportDestination.FolderSource = FolderSourceDefault
+			sm.reportDestination.Folder = resolveFolderPath("reports")
+		}
 
-	// Set HTTPS destination
-	if pb.ReportDestination == playbook.ReportDestinationHTTPS && hasHttps {
-		sm.reportDestination.HttpsSource = HttpsSourcePlaybook
+		// Set HTTPS destination
+		if pb.ReportDestination == playbook.ReportDestinationHTTPS {
+			sm.reportDestination.HttpsSource = HttpsSourcePlaybook
+		} else {
+			sm.reportDestination.HttpsSource = HttpsSourceOff
+		}
 	} else {
-		sm.reportDestination.HttpsSource = HttpsSourceOff
+		// Direct CLI mode: Mutually exclusive destinations
+		if sm.cliFolder != "" {
+			// CLI flag --folder explicitly overrides destination to folder
+			sm.reportDestination.FolderSource = FolderSourceCLI
+			sm.reportDestination.Folder = resolveFolderPath(sm.cliFolder)
+			sm.reportDestination.HttpsSource = HttpsSourceOff
+		} else if pb.ReportDestination == playbook.ReportDestinationHTTPS {
+			// Playbook specifies HTTPS
+			sm.reportDestination.FolderSource = FolderSourceOff
+			sm.reportDestination.HttpsSource = HttpsSourcePlaybook
+		} else {
+			// Folder destination (playbook or default)
+			sm.reportDestination.HttpsSource = HttpsSourceOff
+			if pb.ReportDestinationFolder != "" {
+				sm.reportDestination.FolderSource = FolderSourcePlaybook
+				sm.reportDestination.Folder = resolveFolderPath(pb.ReportDestinationFolder)
+			} else {
+				sm.reportDestination.FolderSource = FolderSourceDefault
+				sm.reportDestination.Folder = resolveFolderPath("reports")
+			}
+		}
 	}
 
 	// Initialize snapshot assertions
@@ -221,10 +266,9 @@ func (sm *StateManager) UnloadPlaybook() error {
 	sm.activeRunID = ""
 
 	folderSource := FolderSourceDefault
-	folderPath := "reports"
+	folderPath := resolveFolderPath(sm.cliFolder)
 	if sm.cliFolder != "" {
 		folderSource = FolderSourceCLI
-		folderPath = sm.cliFolder
 	}
 
 	sm.reportDestination = ReportDestinationState{
@@ -293,7 +337,8 @@ func (sm *StateManager) UpdateDestination(req DestinationUpdateRequest) error {
 	}
 
 	// If CLI flag locked folder, prevent modifying folder
-	if sm.cliFolder != "" && (req.FolderSource != nil && *req.FolderSource != FolderSourceCLI || req.Folder != nil && *req.Folder != sm.cliFolder) {
+	resolvedCLI := resolveFolderPath(sm.cliFolder)
+	if sm.cliFolder != "" && (req.FolderSource != nil && *req.FolderSource != FolderSourceCLI || req.Folder != nil && resolveFolderPath(*req.Folder) != resolvedCLI) {
 		return fmt.Errorf("cannot modify destination: folder is locked by --folder CLI flag")
 	}
 
@@ -301,7 +346,7 @@ func (sm *StateManager) UpdateDestination(req DestinationUpdateRequest) error {
 		sm.reportDestination.FolderSource = *req.FolderSource
 	}
 	if req.Folder != nil {
-		sm.reportDestination.Folder = *req.Folder
+		sm.reportDestination.Folder = resolveFolderPath(*req.Folder)
 	}
 	if req.HttpsSource != nil {
 		sm.reportDestination.HttpsSource = *req.HttpsSource
@@ -375,3 +420,43 @@ func (sm *StateManager) SetStatus(status string) {
 	defer sm.mu.Unlock()
 	sm.status = status
 }
+
+// DispatchReport writes the generated report to configured destinations.
+func (sm *StateManager) DispatchReport(res report.FinalResult) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	// 1. Folder write if active
+	if sm.reportDestination.FolderSource != FolderSourceOff {
+		folderDir := sm.reportDestination.Folder
+		if folderDir == "" {
+			folderDir = "reports"
+		}
+		if err := reportwriter.WriteToFolder(folderDir, res); err != nil {
+			return fmt.Errorf("failed to write report to folder: %w", err)
+		}
+	}
+
+	// 2. HTTPS submission if active
+	if sm.reportDestination.HttpsSource == HttpsSourcePlaybook {
+		if sm.playbook == nil || sm.playbook.ReportDestinationHTTPS == nil {
+			return fmt.Errorf("report destination is https, but reportDestinationHttps configuration is missing")
+		}
+		if err := reportwriter.WriteToHTTP(sm.playbook.ReportDestinationHTTPS, res); err != nil {
+			return fmt.Errorf("failed to send report to HTTPS endpoint: %w", err)
+		}
+	} else if sm.reportDestination.HttpsSource == HttpsSourceCustom && sm.reportDestination.HTTPS != nil {
+		cfg := &playbook.ReportDestinationConfig{
+			URL:               sm.reportDestination.HTTPS.URL,
+			Format:            playbook.ReportFormat(sm.reportDestination.HTTPS.Format),
+			SignatureSecret:   sm.reportDestination.HTTPS.Secret,
+			AdditionalHeaders: sm.reportDestination.HTTPS.Headers,
+		}
+		if err := reportwriter.WriteToHTTP(cfg, res); err != nil {
+			return fmt.Errorf("failed to send report to HTTPS endpoint: %w", err)
+		}
+	}
+
+	return nil
+}
+

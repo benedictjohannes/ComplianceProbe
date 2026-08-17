@@ -10,8 +10,6 @@ import (
 	"github.com/benedictjohannes/crobe/report"
 )
 
-var DefaultReportsDir = ""
-
 // WriteToFolder saves the report files to a local directory.
 func WriteToFolder(reportsDir string, res report.FinalResult) error {
 	if reportsDir == "" {

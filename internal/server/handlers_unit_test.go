@@ -17,7 +17,7 @@ import (
 )
 
 func TestServerObserverCallbacks(t *testing.T) {
-	sm := NewStateManager("")
+	sm := NewStateManager("", true)
 	broker := NewEventBroker()
 	ch := broker.Subscribe()
 	defer broker.Unsubscribe(ch)
@@ -524,7 +524,7 @@ func TestHandlers_DestinationPutEdgeCases(t *testing.T) {
 }
 
 func TestLifecycleManagerStopMultipleTimes(t *testing.T) {
-	sm := NewStateManager("")
+	sm := NewStateManager("", true)
 	lm := NewLifecycleManager(sm, LifecycleConfig{
 		StartupGracePeriod: 10 * time.Millisecond,
 		InactivityTimeout:  10 * time.Millisecond,

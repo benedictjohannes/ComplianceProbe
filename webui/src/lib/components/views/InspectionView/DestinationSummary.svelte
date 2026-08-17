@@ -32,12 +32,7 @@
 
   const destinationFolderDisplay = $derived.by(() => {
     if (destination.folder_source === 'off') return 'Disabled (reports retained in memory only)';
-    if (destination.folder_source === 'cli') return destination.folder || 'Configured via CLI flag';
-    if (destination.folder_source === 'custom') return destination.folder || 'Custom directory path';
-    if (destination.folder_source === 'playbook') {
-      return destination.playbook_defaults?.folder_path || 'Playbook default path';
-    }
-    return '~/.local/state/crobe/runs/';
+    return destination.folder || './reports/';
   });
 
   const httpsEndpointDisplay = $derived.by(() => {
