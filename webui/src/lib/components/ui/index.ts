@@ -8,3 +8,4 @@ export { default as AccordionItem } from './AccordionItem.svelte';
 export { default as Input } from './Input.svelte';
 export { default as Switch } from './Switch.svelte';
 export { default as Tooltip } from './Tooltip.svelte';
+export { default as CodeBlock } from './CodeBlock.svelte';
