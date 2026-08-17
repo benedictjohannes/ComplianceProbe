@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/benedictjohannes/crobe/executor"
+	"github.com/benedictjohannes/crobe/playbook"
 )
 
 func TestProtocolSerialization(t *testing.T) {
@@ -136,4 +137,92 @@ func TestWorkerShutdownCancelsRunningProcess(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Error("Worker failed to shut down when long-running command was active")
 	}
+}
+
+type dummyRunner struct{}
+
+func (d dummyRunner) Run(ctx context.Context, cmd executor.ExecutionRequest) (executor.ExecutionResult, error) {
+	return executor.ExecutionResult{Success: true}, nil
+}
+
+func TestSetupElevation(t *testing.T) {
+	// Ensure executor runner state is restored after tests
+	origRunner := executor.GetElevatedExecutionRunner()
+	defer executor.SetElevatedExecutionRunner(origRunner)
+
+	t.Run("nil playbook returns noop cleanup and no error", func(t *testing.T) {
+		executor.SetElevatedExecutionRunner(nil)
+		cleanup, err := SetupElevation(nil)
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cleanup == nil {
+			t.Fatal("expected non-nil cleanup func")
+		}
+		cleanup()
+		if executor.GetElevatedExecutionRunner() != nil {
+			t.Error("expected elevated runner to remain nil")
+		}
+	})
+
+	t.Run("playbook without elevation required returns noop cleanup", func(t *testing.T) {
+		executor.SetElevatedExecutionRunner(nil)
+		pb := &playbook.Playbook{
+			Sections: []playbook.Section{
+				{
+					Assertions: []playbook.Assertion{
+						{
+							Cmds: []playbook.Cmd{
+								{Exec: playbook.Exec{Script: "echo hello", RequireElevation: false}},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		cleanup, err := SetupElevation(pb)
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cleanup == nil {
+			t.Fatal("expected non-nil cleanup func")
+		}
+		cleanup()
+		if executor.GetElevatedExecutionRunner() != nil {
+			t.Error("expected elevated runner to remain nil")
+		}
+	})
+
+	t.Run("runner already configured is preserved and returns noop cleanup", func(t *testing.T) {
+		dummy := dummyRunner{}
+		executor.SetElevatedExecutionRunner(dummy)
+
+		pb := &playbook.Playbook{
+			Sections: []playbook.Section{
+				{
+					Assertions: []playbook.Assertion{
+						{
+							Cmds: []playbook.Cmd{
+								{Exec: playbook.Exec{Script: "sudo whoami", RequireElevation: true}},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		cleanup, err := SetupElevation(pb)
+		if err != nil {
+			t.Fatalf("expected nil error, got %v", err)
+		}
+		if cleanup == nil {
+			t.Fatal("expected non-nil cleanup func")
+		}
+		cleanup()
+
+		if executor.GetElevatedExecutionRunner() != dummy {
+			t.Error("expected existing runner to be preserved")
+		}
+	})
 }
