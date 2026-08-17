@@ -1,0 +1,3 @@
+# Invalid playbook missing sections and assertions
+title: "Invalid Test Playbook"
+invalid_field: true
