@@ -60,7 +60,7 @@ func NewClient() (*Client, error) {
 			return nil, fmt.Errorf("failed accepting worker connection: %w", res.err)
 		}
 		conn = res.conn
-	case <-time.After(30 * time.Second):
+	case <-time.After(60 * time.Second):
 		listener.Close()
 		CleanupListener(socketURI)
 		if proc != nil {
