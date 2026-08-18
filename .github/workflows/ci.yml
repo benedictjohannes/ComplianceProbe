@@ -44,7 +44,7 @@ jobs:
 
       - name: Upload E2E Artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-artifacts-${{ github.sha }}
           path: |
@@ -57,14 +57,14 @@ jobs:
         run: make schema
 
       - name: Upload Schema Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playbook.schema.json
           path: playbook.schema.json
           retention-days: 30
 
       - name: Upload crobe-linux
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-linux
           path: |
@@ -73,7 +73,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-windows
           path: |
@@ -82,7 +82,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-mac-intel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-mac-intel
           path: |
@@ -91,7 +91,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-mac-arm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-mac-arm
           path: |
@@ -100,7 +100,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-builder-linux
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-builder-linux
           path: |
@@ -109,7 +109,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-builder-windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-builder-windows
           path: |
@@ -118,7 +118,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-builder-mac-intel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-builder-mac-intel
           path: |
@@ -127,7 +127,7 @@ jobs:
           retention-days: 30
 
       - name: Upload crobe-builder-mac-arm
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: crobe-builder-mac-arm
           path: |
