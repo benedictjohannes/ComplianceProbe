@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload E2E Artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-artifacts-${{ github.sha }}
           path: |
@@ -83,7 +83,7 @@ jobs:
 
       - name: Create/Update GitHub Release (Tags)
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             crobe-linux
@@ -101,7 +101,7 @@ jobs:
 
       - name: Create/Update Master Release (Latest)
         if: github.ref == 'refs/heads/master'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: latest_build
           name: Latest Build (Master)
