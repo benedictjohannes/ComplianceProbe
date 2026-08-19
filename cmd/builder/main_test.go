@@ -59,6 +59,16 @@ sections:
 		t.Errorf("Expected exit code 0 for --preprocess happy path, got %d", code)
 	}
 
+	// 4b. Test --preprocess without --output
+	if code := run([]string{"--preprocess", "--input", inputPath}); code != 1 {
+		t.Errorf("Expected exit code 1 for --preprocess without --output, got %d", code)
+	}
+
+	// 4c. Test --preprocess with same input and output path
+	if code := run([]string{"--preprocess", "--input", inputPath, "--output", inputPath}); code != 1 {
+		t.Errorf("Expected exit code 1 for --preprocess with matching input/output, got %d", code)
+	}
+
 	// 5. Test --preprocess with non-existent input file
 	if code := run([]string{"--preprocess", "--input", "non-existent.yaml", "--output", outputPath}); code != 1 {
 		t.Errorf("Expected exit code 1 for --preprocess with non-existent input, got %d", code)

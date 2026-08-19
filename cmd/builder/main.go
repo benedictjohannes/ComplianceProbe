@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/benedictjohannes/crobe/internal/runner"
 	"github.com/benedictjohannes/crobe/internal/transpile"
@@ -32,7 +33,7 @@ func run(args []string) int {
 			schemaFlag = fs.Bool("schema", false, "Output the configuration JSON schema and exit")
 			preprocessFlag = fs.Bool("preprocess", false, "Preprocess a raw YAML into a baked playbook")
 			inputFlag = fs.String("input", "", "Input raw YAML file (for preprocess)")
-			outputFlag = fs.String("output", "playbook.yaml", "Output baked YAML file (for preprocess)")
+			outputFlag = fs.String("output", "", "Output baked YAML file (for preprocess)")
 		},
 		CustomHandler: func(fs *flag.FlagSet) (bool, int) {
 			if schemaFlag != nil && *schemaFlag {
@@ -50,11 +51,15 @@ func run(args []string) int {
 					fmt.Println("❌ Error: --input is required for --preprocess")
 					return true, 1
 				}
-				outPath := "playbook.yaml"
-				if outputFlag != nil && *outputFlag != "" {
-					outPath = *outputFlag
+				if outputFlag == nil || *outputFlag == "" {
+					fmt.Println("❌ Error: --output is required for --preprocess")
+					return true, 1
 				}
-				return true, runPreprocess(*inputFlag, outPath)
+				if filepath.Clean(*inputFlag) == filepath.Clean(*outputFlag) {
+					fmt.Println("❌ Error: --input and --output cannot point to the same file")
+					return true, 1
+				}
+				return true, runPreprocess(*inputFlag, *outputFlag)
 			}
 
 			return false, 0

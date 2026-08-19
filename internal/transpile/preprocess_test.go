@@ -327,6 +327,12 @@ sections:
 	if err == nil || !strings.Contains(err.Error(), "baking remote playbooks is not supported") {
 		t.Errorf("expected remote URL error, got: %v", err)
 	}
+
+	// 6. Same input and output error
+	err = BakeFile(inputPath, inputPath)
+	if err == nil || !strings.Contains(err.Error(), "input and output cannot point to the same file") {
+		t.Errorf("expected same-file error, got: %v", err)
+	}
 }
 
 func TestPreprocessFullAssertion(t *testing.T) {

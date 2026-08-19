@@ -18,6 +18,10 @@ func BakeFile(inputPath, outputPath string) error {
 		return fmt.Errorf("baking remote playbooks is not supported as relative paths to external script files would break")
 	}
 
+	if filepath.Clean(inputPath) == filepath.Clean(outputPath) {
+		return fmt.Errorf("input and output cannot point to the same file: %s", inputPath)
+	}
+
 	config, _, err := configsource.LoadConfig(inputPath, nil)
 	if err != nil {
 		return fmt.Errorf("failed to load input: %w", err)
