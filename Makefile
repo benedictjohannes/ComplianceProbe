@@ -5,7 +5,7 @@ BINARY_NAME=crobe
 LDFLAGS=-s -w
 BUILD_FLAGS=-trimpath -ldflags="$(LDFLAGS)"
 
-.PHONY: help schema build-webui build build-linux build-windows build-mac-intel build-mac-arm build-builder build-builder-linux build-builder-windows build-builder-mac-intel build-builder-mac-arm test test-coverage test-coverage-report test-e2e test-e2e-gui clean
+.PHONY: help schema build-webui build build-linux build-windows build-mac-intel build-mac-arm build-builder build-builder-linux build-builder-windows build-builder-mac-intel build-builder-mac-arm test test-gui test-coverage test-coverage-report test-e2e test-e2e-gui clean
 
 ## help: Show this help message
 help:
@@ -53,6 +53,9 @@ build-builder-mac-arm: build-webui ## Build builder for Mac Arm (arm64)
 test: build-webui ## Run go tests
 	go test -v ./...
 
+test-gui: ## Run webui frontend type check and unit/component tests
+	cd webui && npm run check && npm test
+
 test-coverage: ## Run go tests with coverage
 	go test -cover ./...
 
@@ -82,7 +85,6 @@ test-e2e: ## Verify transpilation and running playbooks with compiled binaries
 test-e2e-gui: build-linux ## Run Playwright GUI E2E tests against embedded binary
 	@echo "Running Playwright Web UI E2E tests..."
 	cd webui && npx playwright test
-
 
 ## clean: Remove all generated binaries
 clean: ## Remove generated binaries

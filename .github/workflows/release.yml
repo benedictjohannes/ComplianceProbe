@@ -35,6 +35,9 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Run Web UI unit tests
+        run: make test-gui
+
       - name: Build all binaries
         run: |
           make build
