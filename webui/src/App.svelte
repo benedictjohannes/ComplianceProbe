@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Header } from '$lib/components/common';
-  import { LoadView, InspectionView, ExecutionView, ResultsView } from '$lib/components/views';
+  import { LoadView, InspectionView, ExecutionView, ResultsView, TerminatedView } from '$lib/components/views';
   import { appState } from '$lib/state/appState.svelte';
   import { themeStore } from '$lib/state/theme.svelte';
-  import { apiClient } from '$lib/api/client';
   import AlertTriangle from 'lucide-svelte/icons/alert-triangle';
 
   // Extract query token if present on initial load
@@ -29,17 +28,14 @@
   });
 
   const connectionState = $derived.by(() => {
+    if (appState.isTerminated) return 'disconnected';
     if (appState.connectionStatus === 'connected') return 'connected';
     if (appState.connectionStatus === 'reconnecting') return 'reconnecting';
     return 'disconnected';
   });
 
   async function handleShutdown() {
-    try {
-      await apiClient.shutdown();
-    } catch (e) {
-      console.error('[App] Shutdown request failed:', e);
-    }
+    await appState.shutdownServer();
   }
 </script>
 
@@ -54,8 +50,12 @@
 
   <!-- Main Shell Container -->
   <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6">
+    <!-- TERMINATED SERVER STATE -->
+    {#if appState.isTerminated}
+      <TerminatedView />
+
     <!-- STEP 1: LOAD VIEW (IDLE) -->
-    {#if appState.isIdle}
+    {:else if appState.isIdle}
       <LoadView />
 
     <!-- STEP 2: INSPECTION VIEW (LOADED) -->

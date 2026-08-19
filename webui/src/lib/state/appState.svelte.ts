@@ -32,6 +32,7 @@ export class AppState {
   isLoading = $state<boolean>(false);
   activeRunId = $state<string | undefined>(undefined);
   logs = $state<string[]>([]);
+  isTerminated = $state<boolean>(false);
 
   // Dependencies
   private client: ApiClient;
@@ -554,6 +555,18 @@ export class AppState {
       this.errors = this.errors.filter((_, i) => i !== index);
     }
   }
+
+  async shutdownServer(): Promise<void> {
+    this.isTerminated = true;
+    try {
+      await this.client.shutdown();
+    } catch {
+      // Server may drop connection immediately
+    } finally {
+      this.destroy();
+    }
+  }
 }
+
 
 export const appState = new AppState();
