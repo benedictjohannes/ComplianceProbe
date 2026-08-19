@@ -432,7 +432,12 @@ func TestServer_DestinationUpdates(t *testing.T) {
 	resp.Body.Close()
 
 	// 1. Update Destination successfully
-	customFolder := "custom_reports_dir"
+	customFolder, err := os.MkdirTemp("", "crobe-custom-reports-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(customFolder)
+
 	folderSource := server.FolderSourceCustom
 	httpsSource := server.HttpsSourceCustom
 	updatePayload, _ := json.Marshal(server.DestinationUpdateRequest{
@@ -446,7 +451,7 @@ func TestServer_DestinationUpdates(t *testing.T) {
 	})
 	req, _ = http.NewRequest(http.MethodPut, ts.URL+"/api/report/destination", bytes.NewReader(updatePayload))
 	authedRequest(req, srv.Token())
-	resp, err := http.DefaultClient.Do(req)
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("destination update failed: %v", err)
 	}
