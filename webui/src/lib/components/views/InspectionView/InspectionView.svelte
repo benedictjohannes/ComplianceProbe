@@ -7,7 +7,7 @@
   import PlaybookHeader from './PlaybookHeader.svelte';
   import DestinationSummary from './DestinationSummary.svelte';
   import SectionsTree from './SectionsTree.svelte';
-  import DestinationDrawer from './DestinationDrawer.svelte';
+  import DestinationDialog from './DestinationDialog.svelte';
   import { appState as defaultAppState, AppState } from '$lib/state/appState.svelte';
   import type { DestinationUpdateRequest } from '$lib/api/types';
 
@@ -18,7 +18,7 @@
 
   let { appStateInstance = defaultAppState, class: className = '' }: Props = $props();
 
-  let isDestinationDrawerOpen = $state<boolean>(false);
+  let isDestinationDialogOpen = $state<boolean>(false);
 
   const hasValidationErrors = $derived.by(() => {
     return appStateInstance.errors.some(
@@ -77,7 +77,7 @@
     <!-- 2. Report Destination Status Summary -->
     <DestinationSummary
       destination={appStateInstance.reportDestination}
-      onOpenDrawer={() => (isDestinationDrawerOpen = true)}
+      onOpenDialog={() => (isDestinationDialogOpen = true)}
     />
 
     <!-- 3. Progressive 3-Level Sections & Assertion Hierarchy -->
@@ -85,12 +85,12 @@
       <SectionsTree sections={appStateInstance.playbook.sections || []} />
     </div>
 
-    <!-- Slide-over Destination Configuration Drawer -->
-    <DestinationDrawer
-      bind:open={isDestinationDrawerOpen}
+    <!-- Destination Configuration Dialog -->
+    <DestinationDialog
+      bind:open={isDestinationDialogOpen}
       destination={appStateInstance.reportDestination}
       onSave={handleSaveDestination}
-      onClose={() => (isDestinationDrawerOpen = false)}
+      onClose={() => (isDestinationDialogOpen = false)}
     />
 
     <!-- Fixed/Sticky Bottom Action Bar -->
@@ -114,7 +114,7 @@
             variant="secondary"
             size="sm"
             disabled={appStateInstance.isLoading}
-            onclick={() => (isDestinationDrawerOpen = true)}
+            onclick={() => (isDestinationDialogOpen = true)}
             class="hidden sm:inline-flex gap-1.5"
           >
             <Settings class="h-4 w-4 text-zinc-500 dark:text-zinc-400" />

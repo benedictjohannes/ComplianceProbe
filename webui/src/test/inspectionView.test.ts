@@ -4,7 +4,7 @@ import PlaybookHeader from '$lib/components/views/InspectionView/PlaybookHeader.
 import AssertionItem from '$lib/components/views/InspectionView/AssertionItem.svelte';
 import SectionsTree from '$lib/components/views/InspectionView/SectionsTree.svelte';
 import DestinationSummary from '$lib/components/views/InspectionView/DestinationSummary.svelte';
-import DestinationDrawer from '$lib/components/views/InspectionView/DestinationDrawer.svelte';
+import DestinationDialog from '$lib/components/views/InspectionView/DestinationDialog.svelte';
 import InspectionView from '$lib/components/views/InspectionView/InspectionView.svelte';
 import { AppState } from '$lib/state/appState.svelte';
 import { ApiClient } from '$lib/api/client';
@@ -199,7 +199,7 @@ describe('DestinationSummary Component', () => {
     render(DestinationSummary, {
       props: {
         destination: mockDestination,
-        onOpenDrawer: handleOpen,
+        onOpenDialog: handleOpen,
       },
     });
 
@@ -210,10 +210,10 @@ describe('DestinationSummary Component', () => {
   });
 });
 
-describe('DestinationDrawer Component', () => {
+describe('DestinationDialog Component', () => {
   it('allows changing folder source to custom and HTTPS to custom with headers and secret', async () => {
     const handleSave = vi.fn();
-    render(DestinationDrawer, {
+    render(DestinationDialog, {
       props: {
         open: true,
         destination: mockDestination,

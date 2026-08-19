@@ -9,11 +9,11 @@
 
   interface Props {
     destination: ReportDestinationState;
-    onOpenDrawer?: () => void;
+    onOpenDialog?: () => void;
     class?: string;
   }
 
-  let { destination, onOpenDrawer, class: className = '' }: Props = $props();
+  let { destination, onOpenDialog, class: className = '' }: Props = $props();
 
   const isFolderOff = $derived(destination.folder_source === 'off');
   const isHttpsOff = $derived(destination.https_source === 'off');
@@ -53,11 +53,11 @@
       Report Destinations
     </span>
 
-    {#if onOpenDrawer}
+    {#if onOpenDialog}
       <Button
         variant="outline"
         size="xs"
-        onclick={onOpenDrawer}
+        onclick={onOpenDialog}
         class="text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white gap-1.5"
       >
         <Settings class="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
