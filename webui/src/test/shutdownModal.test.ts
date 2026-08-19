@@ -16,10 +16,10 @@ describe('ShutdownModal', () => {
 
     expect(screen.getByText('Stop crobe process?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Keep Running/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Stop Server/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stop Process/i })).toBeInTheDocument();
   });
 
-  it('triggers onshutdown and closes modal when Stop Server is clicked', async () => {
+  it('triggers onshutdown and closes modal when Stop Process is clicked', async () => {
     const onshutdownMock = vi.fn().mockResolvedValue(undefined);
     render(ShutdownModal, {
       props: {
@@ -28,7 +28,7 @@ describe('ShutdownModal', () => {
       },
     });
 
-    const stopButton = screen.getByRole('button', { name: /Stop Server/i });
+    const stopButton = screen.getByRole('button', { name: /Stop Process/i });
     await fireEvent.click(stopButton);
 
     expect(onshutdownMock).toHaveBeenCalledTimes(1);
