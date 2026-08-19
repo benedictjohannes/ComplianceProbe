@@ -24,9 +24,10 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Polyfill global document for bits-ui timer cleanup callbacks in jsdom worker threads
-if (typeof globalThis.document === 'undefined' && typeof window !== 'undefined' && window.document) {
-  globalThis.document = window.document;
+// Ensure document and window are available on globalThis for asynchronous cleanup timers (bits-ui scroll-lock)
+if (typeof window !== 'undefined') {
+  (globalThis as any).document = window.document;
+  (globalThis as any).window = window;
 }
 
 
