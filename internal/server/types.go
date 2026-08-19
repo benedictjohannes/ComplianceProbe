@@ -11,6 +11,8 @@ const (
 	StatusRunningCancelling             = "running.cancelling"
 	StatusCompletedConfirmingSubmission = "completed.confirming_submission"
 	StatusCompletedSubmitting           = "completed.submitting"
+	StatusCompletedSubmitted            = "completed.submitted"
+	StatusCompletedSubmissionError      = "completed.submission_error"
 	StatusCompleted                     = "completed"
 	StatusError                         = "error"
 )

@@ -870,7 +870,7 @@ func TestServer_RemoteReportSubmissionAndRetry(t *testing.T) {
 		t.Fatalf("expected status completed.confirming_submission, got %s", stateResp.Status)
 	}
 
-	// 4. Remote Submit fails on first attempt -> 502 Bad Gateway, returns to completed.confirming_submission
+	// 4. Remote Submit fails on first attempt -> 502 Bad Gateway, returns to completed.submission_error
 	req, _ = http.NewRequest(http.MethodPost, ts.URL+"/api/report/remote-submit", nil)
 	authedRequest(req, srv.Token())
 	resp, _ = http.DefaultClient.Do(req)
@@ -880,11 +880,11 @@ func TestServer_RemoteReportSubmissionAndRetry(t *testing.T) {
 	_ = json.NewDecoder(resp.Body).Decode(&stateResp)
 	resp.Body.Close()
 
-	if stateResp.Status != server.StatusCompletedConfirmingSubmission {
-		t.Errorf("status after failed submit = %s, want completed.confirming_submission", stateResp.Status)
+	if stateResp.Status != server.StatusCompletedSubmissionError {
+		t.Errorf("status after failed submit = %s, want completed.submission_error", stateResp.Status)
 	}
 
-	// 5. Retry Remote Submit -> succeeds, transitions to completed
+	// 5. Retry Remote Submit -> succeeds, transitions to completed.submitted
 	req, _ = http.NewRequest(http.MethodPost, ts.URL+"/api/report/remote-submit", nil)
 	authedRequest(req, srv.Token())
 	resp, err := http.DefaultClient.Do(req)
@@ -897,8 +897,8 @@ func TestServer_RemoteReportSubmissionAndRetry(t *testing.T) {
 	_ = json.NewDecoder(resp.Body).Decode(&stateResp)
 	resp.Body.Close()
 
-	if stateResp.Status != server.StatusCompleted {
-		t.Errorf("status after successful submit = %s, want completed", stateResp.Status)
+	if stateResp.Status != server.StatusCompletedSubmitted {
+		t.Errorf("status after successful submit = %s, want completed.submitted", stateResp.Status)
 	}
 }
 

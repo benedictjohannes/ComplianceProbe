@@ -53,6 +53,8 @@ export class AppState {
   isCompleted = $derived(this.status.startsWith('completed'));
   isConfirmingSubmission = $derived(this.status === 'completed.confirming_submission');
   isSubmitting = $derived(this.status === 'completed.submitting');
+  isSubmitted = $derived(this.status === 'completed.submitted');
+  isSubmissionError = $derived(this.status === 'completed.submission_error');
   isError = $derived(this.status === 'error');
   hasErrors = $derived(this.errors.length > 0);
   isConnected = $derived(this.connectionStatus === 'connected');

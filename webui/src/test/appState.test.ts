@@ -37,11 +37,25 @@ describe('AppState Store', () => {
     expect(state.isLoaded).toBe(false);
     expect(state.isRunning).toBe(false);
     expect(state.isCompleted).toBe(false);
+    expect(state.isSubmitted).toBe(false);
+    expect(state.isSubmissionError).toBe(false);
     expect(state.hasErrors).toBe(false);
     expect(state.currentPipelineStep).toBe(0);
     expect(state.totalAssertions).toBe(0);
     expect(state.completedAssertions).toBe(0);
     expect(state.progressPercent).toBe(0);
+  });
+
+  it('should compute isSubmitted and isSubmissionError accurately', () => {
+    state.status = 'completed.submitted';
+    expect(state.isCompleted).toBe(true);
+    expect(state.isSubmitted).toBe(true);
+    expect(state.isSubmissionError).toBe(false);
+
+    state.status = 'completed.submission_error';
+    expect(state.isCompleted).toBe(true);
+    expect(state.isSubmitted).toBe(false);
+    expect(state.isSubmissionError).toBe(true);
   });
 
   it('reconcileState: should update state and clear execution/playbook when transitioning to idle', () => {

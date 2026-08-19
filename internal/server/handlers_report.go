@@ -228,7 +228,7 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 
 	s.state.mu.Lock()
 	if err != nil {
-		s.state.status = StatusCompletedConfirmingSubmission
+		s.state.status = StatusCompletedSubmissionError
 		s.state.errors = append(s.state.errors, AppError{
 			Code:    ErrCodeRemoteSubmissionFailed,
 			Message: fmt.Sprintf("Remote submission failed: %v", err),
@@ -250,11 +250,11 @@ func (s *Server) handleReportRemoteSubmit(w http.ResponseWriter, r *http.Request
 	}
 
 	// Submission Succeeded
-	s.state.status = StatusCompleted
+	s.state.status = StatusCompletedSubmitted
 	// Clear previous submission errors
 	var remainingErrors []AppError
 	for _, e := range s.state.errors {
-		if e.Code != ErrCodeRemoteSubmissionFailed {
+		if e.Code != ErrCodeRemoteSubmissionFailed && e.Code != ErrCodeRemoteSubmissionTimeout {
 			remainingErrors = append(remainingErrors, e)
 		}
 	}

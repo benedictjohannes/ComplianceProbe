@@ -11,6 +11,8 @@ export type Status =
   | 'running.cancelling'
   | 'completed.confirming_submission'
   | 'completed.submitting'
+  | 'completed.submitted'
+  | 'completed.submission_error'
   | 'completed'
   | 'error';
 
