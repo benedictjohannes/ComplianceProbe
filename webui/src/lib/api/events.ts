@@ -6,6 +6,7 @@ import type {
   LogEventData,
   ExecutionCompletedEventData,
   ExecutionCancelledEventData,
+  TerminationEventData,
   ConnectionStatus,
 } from './types';
 
@@ -24,6 +25,7 @@ export type TypedSSEEventMap = {
   log: LogEventData;
   execution_completed: ExecutionCompletedEventData;
   execution_cancelled: ExecutionCancelledEventData;
+  termination: TerminationEventData;
 };
 
 type EventCallback<K extends keyof TypedSSEEventMap> = (data: TypedSSEEventMap[K], eventId: number) => void;
@@ -170,6 +172,7 @@ export class EventStreamManager {
       'log',
       'execution_completed',
       'execution_cancelled',
+      'termination',
     ];
 
     for (const type of eventTypes) {

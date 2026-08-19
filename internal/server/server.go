@@ -220,16 +220,23 @@ func (s *Server) Token() string {
 
 // TriggerShutdown initiates asynchronous graceful shutdown.
 func (s *Server) TriggerShutdown() {
-	s.shutdownOnce.Do(func() {
-		close(s.shutdownChan)
+	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = s.Shutdown(ctx)
-	})
+	}()
 }
 
 // Shutdown gracefully terminates the HTTP server.
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.broker != nil {
+		s.broker.BroadcastTermination(1 * time.Second)
+	}
+
+	s.shutdownOnce.Do(func() {
+		close(s.shutdownChan)
+	})
+
 	if s.lifecycle != nil {
 		s.lifecycle.Stop()
 	}
@@ -245,6 +252,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 // Close immediately terminates the HTTP server.
 func (s *Server) Close() error {
+	if s.broker != nil {
+		s.broker.BroadcastTermination(100 * time.Millisecond)
+	}
+
+	s.shutdownOnce.Do(func() {
+		close(s.shutdownChan)
+	})
+
 	if s.lifecycle != nil {
 		s.lifecycle.Stop()
 	}

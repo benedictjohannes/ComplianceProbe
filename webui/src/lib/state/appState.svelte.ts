@@ -153,6 +153,13 @@ export class AppState {
       })
     );
 
+    this.unsubscribers.push(
+      this.stream.on('termination', () => {
+        this.isTerminated = true;
+        this.destroy();
+      })
+    );
+
     // 4. Start SSE stream
     this.stream.connect();
 

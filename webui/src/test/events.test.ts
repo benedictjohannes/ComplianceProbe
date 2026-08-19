@@ -150,6 +150,13 @@ describe('EventStreamManager', () => {
     expect(logSpy).toHaveBeenCalledWith(mockLog, 3);
     expect(manager.getLastEventId()).toBe(3);
 
+    // 4. Emit termination
+    const terminationSpy = vi.fn();
+    manager.on('termination', terminationSpy);
+    es.emit('termination', { reason: 'shutdown' }, '4');
+    expect(terminationSpy).toHaveBeenCalledWith({ reason: 'shutdown' }, 4);
+    expect(manager.getLastEventId()).toBe(4);
+
     manager.disconnect();
   });
 

@@ -3,12 +3,15 @@ package runner
 import (
 	"errors"
 	"flag"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/benedictjohannes/crobe/internal/elevation"
 	"github.com/benedictjohannes/crobe/playbook"
 )
 
@@ -30,9 +33,19 @@ func TestRunnerHeadless(t *testing.T) {
 		IsAgent: true,
 	}
 
-	// 1. Missing playbook in headless mode
+	// 1. Missing playbook in headless mode (no args)
 	if code := Run([]string{}, opts); code != 1 {
 		t.Errorf("expected exit code 1 for missing playbook, got %d", code)
+	}
+
+	// 1b. Missing playbook in headless mode with flags provided
+	if code := Run([]string{"-folder", "reports"}, opts); code != 1 {
+		t.Errorf("expected exit code 1 for missing playbook with flags, got %d", code)
+	}
+
+	// 1c. Default name fallback when opts.Name is empty
+	if code := Run([]string{"--invalid-flag"}, Options{}); code != 1 {
+		t.Errorf("expected exit code 1 for empty Options with invalid flag, got %d", code)
 	}
 
 	// 2. Invalid flag
@@ -136,6 +149,28 @@ sections:
 	// 8. Worker error
 	if code := Run([]string{"-worker", "invalid-socket"}, opts); code != 1 {
 		t.Errorf("expected exit code 1 for invalid worker socket, got %d", code)
+	}
+
+	// 8b. Worker success
+	socketURI := elevation.GenerateSocketURI()
+	listener, err := elevation.Listen(socketURI)
+	if err != nil {
+		t.Fatalf("elevation.Listen failed: %v", err)
+	}
+	defer listener.Close()
+	defer elevation.CleanupListener(socketURI)
+
+	go func() {
+		conn, err := listener.Accept()
+		if err == nil {
+			client := elevation.NewClientWithConn(conn, listener, socketURI, nil)
+			time.Sleep(50 * time.Millisecond)
+			_ = client.Close()
+		}
+	}()
+
+	if code := Run([]string{"-worker", socketURI}, opts); code != 0 {
+		t.Errorf("expected exit code 0 for worker success, got %d", code)
 	}
 
 	// 9. Dispatch report network error
@@ -252,7 +287,33 @@ sections:
 		t.Fatal("timed out waiting for UI server to shut down")
 	}
 
-	// 4. Test preloaded playbook with validation error in UI mode
+	// 4. Test valid non-zero PORT env var resolution
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to find free port: %v", err)
+	}
+	freePort := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+
+	_ = os.Setenv("PORT", strconv.Itoa(freePort))
+	portExitChan := make(chan int, 1)
+	go func() {
+		code := Run([]string{"--ui", "--no-open"}, opts)
+		portExitChan <- code
+	}()
+
+	time.Sleep(150 * time.Millisecond)
+	_ = syscall.Kill(os.Getpid(), syscall.SIGINT)
+	select {
+	case code := <-portExitChan:
+		if code != 0 {
+			t.Errorf("expected exit code 0 for PORT env launch, got %d", code)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for UI server to shut down")
+	}
+
+	// 5. Test preloaded playbook with validation error in UI mode
 	valErrPbPath := filepath.Join(tmpDir, "preloaded_val_err.yaml")
 	valErrContent := `
 title: "Duplicate codes"
@@ -286,8 +347,10 @@ sections:
 		t.Fatal("timed out waiting for UI server to shut down")
 	}
 
-	// 5. Test UI start failure (invalid host)
+	// 6. Test UI start failure (invalid host)
 	if code := Run([]string{"--ui", "--host", "999.999.999.999", "--port", "999999"}, opts); code != 1 {
 		t.Errorf("expected exit code 1 for invalid host/port, got %d", code)
 	}
 }
+
+

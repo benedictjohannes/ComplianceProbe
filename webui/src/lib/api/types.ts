@@ -220,7 +220,8 @@ export type SSEEventType =
   | 'assertion_progress'
   | 'log'
   | 'execution_completed'
-  | 'execution_cancelled';
+  | 'execution_cancelled'
+  | 'termination';
 
 export interface SSEEvent<T = unknown> {
   id: number;
@@ -253,6 +254,10 @@ export interface ExecutionCompletedEventData {
 
 export interface ExecutionCancelledEventData {
   run_id: string;
+}
+
+export interface TerminationEventData {
+  reason?: string;
 }
 
 // Report Data Types

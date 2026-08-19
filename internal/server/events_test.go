@@ -399,3 +399,98 @@ func TestSSEExecutionLiveEvents(t *testing.T) {
 		}
 	}
 }
+
+func TestEventBrokerBroadcastTermination(t *testing.T) {
+	broker := NewEventBroker()
+
+	// 1. With 0 subscribers, returns immediately with 0
+	if id := broker.BroadcastTermination(500 * time.Millisecond); id != 0 {
+		t.Errorf("expected 0 for termination with no subscribers, got %d", id)
+	}
+
+	// 2. With subscribers, verifies Done callback and waitgroup resolution
+	ch1 := broker.Subscribe()
+	ch2 := broker.Subscribe()
+
+	go func() {
+		ev1 := <-ch1
+		if ev1.Type != "termination" {
+			t.Errorf("expected termination event on ch1, got %s", ev1.Type)
+		}
+		if ev1.Done != nil {
+			ev1.Done()
+		}
+
+		ev2 := <-ch2
+		if ev2.Type != "termination" {
+			t.Errorf("expected termination event on ch2, got %s", ev2.Type)
+		}
+		if ev2.Done != nil {
+			ev2.Done()
+		}
+	}()
+
+	start := time.Now()
+	evID := broker.BroadcastTermination(1 * time.Second)
+	duration := time.Since(start)
+
+	if evID != 1 {
+		t.Errorf("expected event ID 1, got %d", evID)
+	}
+	if duration >= 500*time.Millisecond {
+		t.Errorf("BroadcastTermination took unexpectedly long: %v", duration)
+	}
+}
+
+func TestSSEShutdownTerminationStream(t *testing.T) {
+	srv, err := NewServer(Config{
+		Token:               "terminationstreamtest1234567890",
+		DisableAutoShutdown: true,
+	})
+	if err != nil {
+		t.Fatalf("failed to create server: %v", err)
+	}
+
+	ts := httptest.NewServer(srv.httpServer.Handler)
+	defer ts.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/api/events", nil)
+	req.Header.Set("Authorization", "Bearer terminationstreamtest1234567890")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("failed to connect: %v", err)
+	}
+	defer resp.Body.Close()
+
+	reader := bufio.NewReader(resp.Body)
+
+	// Consume initial connected comment
+	_, _ = reader.ReadString('\n')
+	_, _ = reader.ReadString('\n')
+
+	// Trigger shutdown in background
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		_ = srv.Shutdown(context.Background())
+	}()
+
+	// Verify termination event is received before connection closes
+	receivedTermination := false
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		if strings.HasPrefix(line, "event: termination") {
+			receivedTermination = true
+		}
+	}
+
+	if !receivedTermination {
+		t.Errorf("expected termination event before SSE stream closed")
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // SSEEvent represents a single Server-Sent Event payload.
@@ -13,6 +14,12 @@ type SSEEvent struct {
 	Type  string      `json:"type"`
 	RunID string      `json:"run_id,omitempty"`
 	Data  interface{} `json:"data"`
+	Done  func()      `json:"-"`
+}
+
+// TerminationEventData is emitted for termination events.
+type TerminationEventData struct {
+	Reason string `json:"reason,omitempty"`
 }
 
 // AssertionProgressEventData is emitted for assertion_progress events.
@@ -104,6 +111,60 @@ func (b *EventBroker) Broadcast(eventType, runID string, data interface{}) int64
 	return ev.ID
 }
 
+// BroadcastTermination dispatches a termination event to all active subscribers
+// and waits until all connected clients have been flushed (or until timeout expires).
+func (b *EventBroker) BroadcastTermination(timeout time.Duration) int64 {
+	b.mu.Lock()
+
+	count := len(b.subscribers)
+	if count == 0 {
+		b.mu.Unlock()
+		return 0
+	}
+
+	b.lastEventID++
+	evID := b.lastEventID
+
+	var wg sync.WaitGroup
+	wg.Add(count)
+
+	for ch := range b.subscribers {
+		var subOnce sync.Once
+		subDone := func() {
+			subOnce.Do(func() {
+				wg.Done()
+			})
+		}
+
+		ev := SSEEvent{
+			ID:   evID,
+			Type: "termination",
+			Data: TerminationEventData{Reason: "shutdown"},
+			Done: subDone,
+		}
+
+		select {
+		case ch <- ev:
+		default:
+			subDone()
+		}
+	}
+	b.mu.Unlock()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(timeout):
+	}
+
+	return evID
+}
+
 // LastEventID returns the highest event ID assigned so far.
 func (b *EventBroker) LastEventID() int64 {
 	b.mu.Lock()
@@ -163,10 +224,19 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 			}
 			dataBytes, err := json.Marshal(ev.Data)
 			if err != nil {
+				if ev.Done != nil {
+					ev.Done()
+				}
 				continue
 			}
 			_, _ = fmt.Fprintf(w, "id: %d\nevent: %s\ndata: %s\n\n", ev.ID, ev.Type, string(dataBytes))
 			flusher.Flush()
+			if ev.Done != nil {
+				ev.Done()
+			}
+			if ev.Type == "termination" {
+				return
+			}
 		}
 	}
 }

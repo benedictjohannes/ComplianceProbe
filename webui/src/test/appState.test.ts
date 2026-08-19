@@ -469,5 +469,27 @@ describe('AppState Store', () => {
     expect(state.execution?.assertions.find((a) => a.code === 'CHK_1')?.status).toBe('passed');
     expect(state.passedAssertions).toBe(1);
   });
+
+  it('termination event should set isTerminated to true and destroy subscriptions', () => {
+    let terminationCallback: ((data: unknown, id: number) => void) | undefined;
+    vi.spyOn(mockStream, 'on').mockImplementation((type: string, cb: unknown) => {
+      if (type === 'termination') {
+        terminationCallback = cb as (data: unknown, id: number) => void;
+      }
+      return vi.fn();
+    });
+    const destroySpy = vi.spyOn(state, 'destroy');
+
+    state.init();
+
+    expect(terminationCallback).toBeDefined();
+    expect(state.isTerminated).toBe(false);
+
+    // Trigger termination event
+    terminationCallback!({ reason: 'shutdown' }, 10);
+
+    expect(state.isTerminated).toBe(true);
+    expect(destroySpy).toHaveBeenCalled();
+  });
 });
 
