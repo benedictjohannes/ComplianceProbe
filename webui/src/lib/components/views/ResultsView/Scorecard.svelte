@@ -72,10 +72,10 @@
   )}
 >
   <!-- Top Hero Grid: Gauge & Key Metrics -->
-  <div class="flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 sm:gap-8 pb-6 border-b border-zinc-200 dark:border-zinc-800">
     <!-- Left: Radial Gauge Ring & Pass Rate -->
-    <div class="flex items-center gap-6 shrink-0">
-      <div class="relative flex items-center justify-center">
+    <div class="flex items-center gap-6 min-w-0 flex-1">
+      <div class="relative flex items-center justify-center shrink-0">
         <svg
           class="w-28 h-28 transform -rotate-90"
           viewBox="0 0 100 100"
@@ -131,32 +131,32 @@
       </div>
 
       <!-- Playbook & Overall Status Title -->
-      <div class="space-y-2">
-        <div class="flex items-center gap-2.5">
+      <div class="space-y-2 min-w-0 flex-1">
+        <div class="flex items-center gap-2.5 flex-wrap">
           <!-- Overall Status Badge -->
           {#if overallStatus === 'PASSED'}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
               <ShieldCheck class="h-3.5 w-3.5" />
               PASSED
             </span>
           {:else if overallStatus === 'ABORTED'}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
               <Ban class="h-3.5 w-3.5" />
               ABORTED
             </span>
           {:else}
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 shrink-0">
               <ShieldAlert class="h-3.5 w-3.5" />
               FAILED
             </span>
           {/if}
 
-          <span class="text-xs font-mono text-zinc-400 dark:text-zinc-500">
+          <span class="text-xs font-mono text-zinc-400 dark:text-zinc-500 truncate">
             Run: {appState.execution?.run_id || 'run'}
           </span>
         </div>
 
-        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 line-clamp-1">
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 break-words line-clamp-2" title={appState.playbook?.title || 'Compliance Audit'}>
           {appState.playbook?.title || 'Compliance Audit'}
         </h2>
 

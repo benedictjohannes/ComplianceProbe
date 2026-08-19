@@ -32,6 +32,7 @@ export class AppState {
   isLoading = $state<boolean>(false);
   activeRunId = $state<string | undefined>(undefined);
   logs = $state<string[]>([]);
+  isTerminated = $state<boolean>(false);
 
   // Dependencies
   private client: ApiClient;
@@ -52,6 +53,8 @@ export class AppState {
   isCompleted = $derived(this.status.startsWith('completed'));
   isConfirmingSubmission = $derived(this.status === 'completed.confirming_submission');
   isSubmitting = $derived(this.status === 'completed.submitting');
+  isSubmitted = $derived(this.status === 'completed.submitted');
+  isSubmissionError = $derived(this.status === 'completed.submission_error');
   isError = $derived(this.status === 'error');
   hasErrors = $derived(this.errors.length > 0);
   isConnected = $derived(this.connectionStatus === 'connected');
@@ -554,6 +557,18 @@ export class AppState {
       this.errors = this.errors.filter((_, i) => i !== index);
     }
   }
+
+  async shutdownServer(): Promise<void> {
+    this.isTerminated = true;
+    try {
+      await this.client.shutdown();
+    } catch {
+      // Server may drop connection immediately
+    } finally {
+      this.destroy();
+    }
+  }
 }
+
 
 export const appState = new AppState();

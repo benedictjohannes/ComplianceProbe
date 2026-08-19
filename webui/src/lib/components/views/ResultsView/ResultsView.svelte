@@ -9,6 +9,9 @@
   import RotateCw from 'lucide-svelte/icons/rotate-cw';
   import FolderOpen from 'lucide-svelte/icons/folder-open';
   import Send from 'lucide-svelte/icons/send';
+  import CheckCircle2 from 'lucide-svelte/icons/check-circle-2';
+  import AlertTriangle from 'lucide-svelte/icons/alert-triangle';
+  import Loader2 from 'lucide-svelte/icons/loader-2';
   import { cn } from '$lib/utils/cn';
 
   interface Props {
@@ -28,22 +31,12 @@
   let previewModalDownloadUrl = $state<string | undefined>(undefined);
   let previewModalIsLog = $state(false);
 
-  // Auto-open submission prompt if in confirming_submission status
-  $effect(() => {
-    if (appState.isConfirmingSubmission) {
-      showSubmissionPrompt = true;
-    }
-  });
-
-  // Check if remote destination is available
+  // Check if remote HTTPS destination is actively configured
   const hasRemoteDestination = $derived.by(() => {
-    if (appState.reportDestination.https_source !== 'off' && appState.reportDestination.https?.url) {
+    if (appState.reportDestination.https_source === 'custom' && appState.reportDestination.https?.url) {
       return true;
     }
-    if (appState.reportDestination.playbook_defaults?.has_https) {
-      return true;
-    }
-    if (appState.playbook?.reportDestinationHttps?.url) {
+    if (appState.reportDestination.https_source === 'playbook' && (appState.reportDestination.playbook_defaults?.has_https || appState.playbook?.reportDestinationHttps?.url)) {
       return true;
     }
     return false;
@@ -132,8 +125,19 @@
     </div>
 
     <!-- Right: Quick Status Indicator -->
-    <div class="text-xs font-mono text-zinc-500 dark:text-zinc-400">
-      Status: <span class="font-semibold text-zinc-800 dark:text-zinc-200">{appState.status}</span>
+    <div class="text-xs font-mono text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+      Status:
+      <span
+        class={cn(
+          'font-semibold px-2 py-0.5 rounded text-[11px]',
+          appState.isSubmitted && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+          appState.isSubmissionError && 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+          appState.isSubmitting && 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 animate-pulse',
+          !appState.isSubmitted && !appState.isSubmissionError && !appState.isSubmitting && 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700'
+        )}
+      >
+        {appState.status}
+      </span>
     </div>
   </div>
 
@@ -162,14 +166,43 @@
     <!-- Right: Conditional Submit Button -->
     <div class="flex items-center gap-3">
       {#if hasRemoteDestination}
-        <button
-          type="button"
-          onclick={() => (showSubmissionPrompt = true)}
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
-        >
-          <Send class="h-3.5 w-3.5" />
-          <span>Submit Report to Server</span>
-        </button>
+        {#if appState.isSubmitted}
+          <button
+            type="button"
+            onclick={() => (showSubmissionPrompt = true)}
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold shadow-xs transition cursor-pointer select-none"
+          >
+            <CheckCircle2 class="h-3.5 w-3.5" />
+            <span>Report Submitted</span>
+          </button>
+        {:else if appState.isSubmissionError}
+          <button
+            type="button"
+            onclick={() => (showSubmissionPrompt = true)}
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
+          >
+            <AlertTriangle class="h-3.5 w-3.5" />
+            <span>Retry Server Submission</span>
+          </button>
+        {:else if appState.isSubmitting}
+          <button
+            type="button"
+            disabled
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 opacity-70 text-white text-xs font-semibold shadow-sm select-none cursor-not-allowed"
+          >
+            <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            <span>Submitting...</span>
+          </button>
+        {:else}
+          <button
+            type="button"
+            onclick={() => (showSubmissionPrompt = true)}
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
+          >
+            <Send class="h-3.5 w-3.5" />
+            <span>Submit Report to Server</span>
+          </button>
+        {/if}
       {/if}
     </div>
   </div>

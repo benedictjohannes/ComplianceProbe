@@ -397,4 +397,25 @@ describe('ResultsView Orchestrator Component', () => {
     const { getByRole } = render(ResultsView);
     expect(getByRole('button', { name: /Submit Report to Server/i })).toBeInTheDocument();
   });
+
+  it('hides Submit Report to Server button when https_source is off', () => {
+    appState.reportDestination = {
+      folder_source: 'default',
+      https_source: 'off',
+    };
+    const { queryByRole } = render(ResultsView);
+    expect(queryByRole('button', { name: /Submit Report to Server/i })).not.toBeInTheDocument();
+  });
+
+  it('renders Report Submitted button when status is completed.submitted', () => {
+    appState.status = 'completed.submitted';
+    const { getByRole } = render(ResultsView);
+    expect(getByRole('button', { name: /Report Submitted/i })).toBeInTheDocument();
+  });
+
+  it('renders Retry Server Submission button when status is completed.submission_error', () => {
+    appState.status = 'completed.submission_error';
+    const { getByRole } = render(ResultsView);
+    expect(getByRole('button', { name: /Retry Server Submission/i })).toBeInTheDocument();
+  });
 });

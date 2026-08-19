@@ -83,10 +83,16 @@
     );
   });
 
+  $effect(() => {
+    if (open) {
+      submissionSuccess = appState.isSubmitted;
+    }
+  });
+
   async function handleSubmit() {
     try {
       await appState.submitRemoteReport();
-      if (!appState.errors.some((e) => e.code.includes('SUBMISSION'))) {
+      if (appState.isSubmitted) {
         submissionSuccess = true;
       }
     } catch {

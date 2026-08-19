@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 func (s *Server) handleReportDestinationPut(w http.ResponseWriter, r *http.Request) {
@@ -38,19 +37,16 @@ func (s *Server) handleReportDestinationPut(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Validate HTTPS configuration if provided
-	if req.HTTPS != nil && req.HTTPS.URL != "" {
-		if !strings.HasPrefix(req.HTTPS.URL, "https://") {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"error": AppError{
-					Code:    "INVALID_DESTINATION",
-					Message: "HTTPS destination URL must start with https://",
-				},
-			})
-			return
-		}
+	if err := req.Validate(); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": AppError{
+				Code:    "INVALID_DESTINATION",
+				Message: err.Error(),
+			},
+		})
+		return
 	}
 
 	if err := s.state.UpdateDestination(req); err != nil {
