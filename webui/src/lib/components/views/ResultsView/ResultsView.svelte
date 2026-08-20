@@ -97,7 +97,7 @@
   }
 </script>
 
-<div class={cn('space-y-6 animate-in fade-in-50', className)}>
+<div class={cn('space-y-6 animate-in fade-in-50 pb-20', className)}>
   <!-- 1. Top Action Bar: Workflow & Lifecycle -->
   <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 shadow-xs">
     <div class="flex items-center gap-2">
@@ -152,58 +152,60 @@
     />
   </div>
 
-  <!-- 4. Bottom Action Bar: Inspection, Export & Delivery -->
-  <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-white/70 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 shadow-xs">
-    <!-- Left: Reports Dropup -->
-    <div>
-      <ExportDropdown
-        onPreviewMarkdown={() => handleOpenMarkdownModal()}
-        onPreviewLogs={() => handleOpenLogsModal()}
-        side="top"
-      />
-    </div>
+  <!-- 4. Fixed/Sticky Bottom Action Bar: Inspection, Export & Delivery -->
+  <div class="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm py-3 shadow-2xl transition-colors">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
+      <!-- Left: Reports Dropup -->
+      <div>
+        <ExportDropdown
+          onPreviewMarkdown={() => handleOpenMarkdownModal()}
+          onPreviewLogs={() => handleOpenLogsModal()}
+          side="top"
+        />
+      </div>
 
-    <!-- Right: Conditional Submit Button -->
-    <div class="flex items-center gap-3">
-      {#if hasRemoteDestination}
-        {#if appState.isSubmitted}
-          <button
-            type="button"
-            onclick={() => (showSubmissionPrompt = true)}
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold shadow-xs transition cursor-pointer select-none"
-          >
-            <CheckCircle2 class="h-3.5 w-3.5" />
-            <span>Report Submitted</span>
-          </button>
-        {:else if appState.isSubmissionError}
-          <button
-            type="button"
-            onclick={() => (showSubmissionPrompt = true)}
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
-          >
-            <AlertTriangle class="h-3.5 w-3.5" />
-            <span>Retry Server Submission</span>
-          </button>
-        {:else if appState.isSubmitting}
-          <button
-            type="button"
-            disabled
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 opacity-70 text-white text-xs font-semibold shadow-sm select-none cursor-not-allowed"
-          >
-            <Loader2 class="h-3.5 w-3.5 animate-spin" />
-            <span>Submitting...</span>
-          </button>
-        {:else}
-          <button
-            type="button"
-            onclick={() => (showSubmissionPrompt = true)}
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
-          >
-            <Send class="h-3.5 w-3.5" />
-            <span>Submit Report to Server</span>
-          </button>
+      <!-- Right: Conditional Submit Button -->
+      <div class="flex items-center gap-3">
+        {#if hasRemoteDestination}
+          {#if appState.isSubmitted}
+            <button
+              type="button"
+              onclick={() => (showSubmissionPrompt = true)}
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-semibold shadow-xs transition cursor-pointer select-none"
+            >
+              <CheckCircle2 class="h-3.5 w-3.5" />
+              <span>Report Submitted</span>
+            </button>
+          {:else if appState.isSubmissionError}
+            <button
+              type="button"
+              onclick={() => (showSubmissionPrompt = true)}
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
+            >
+              <AlertTriangle class="h-3.5 w-3.5" />
+              <span>Retry Server Submission</span>
+            </button>
+          {:else if appState.isSubmitting}
+            <button
+              type="button"
+              disabled
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 opacity-70 text-white text-xs font-semibold shadow-sm select-none cursor-not-allowed"
+            >
+              <Loader2 class="h-3.5 w-3.5 animate-spin" />
+              <span>Submitting...</span>
+            </button>
+          {:else}
+            <button
+              type="button"
+              onclick={() => (showSubmissionPrompt = true)}
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer select-none"
+            >
+              <Send class="h-3.5 w-3.5" />
+              <span>Submit Report to Server</span>
+            </button>
+          {/if}
         {/if}
-      {/if}
+      </div>
     </div>
   </div>
 
