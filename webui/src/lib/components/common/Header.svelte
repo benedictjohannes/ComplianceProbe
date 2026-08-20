@@ -39,6 +39,7 @@
 
   let shutdownModalOpen = $state(false);
 
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? `v${__APP_VERSION__}` : 'v0.6';
   const progressPercentage = $derived((activeStep / 4) * 100);
 </script>
 
@@ -53,7 +54,7 @@
         </div>
         <span class="text-base font-semibold">crobe</span>
         <span class="text-[10px] font-mono font-normal text-zinc-600 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-1.5 py-0.5 rounded">
-          v0.1
+          {appVersion}
         </span>
       </div>
 
@@ -123,7 +124,7 @@
         </div>
         <span class="text-sm font-semibold">crobe</span>
         <span class="text-[9px] font-mono text-zinc-600 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-1 py-0.2 rounded border border-zinc-200 dark:border-zinc-800">
-          v0.1
+          {appVersion}
         </span>
         {#if playbookName}
           <span class="text-[10px] font-mono text-sky-600 dark:text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded truncate max-w-[100px]">

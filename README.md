@@ -6,9 +6,13 @@
 
 Whether you are auditing a desktop for security standards or monitoring server health, `crobe` provides a flexible, scriptable, and reproducible way to generate detailed compliance reports.
 
+![Compliance Probe Web UI Demo](./docs/ComplianceProbe-UI-Demo.webp)
+
 ## ✨ Key Features
 
+-   **🖥️ Embedded Local Web UI**: Self-contained web interface (Pure Go + Svelte 5) with drag-and-drop playbook loading, real-time live execution streaming, interactive log console, compliance scorecard, and multi-format report exports (`.zip`, `.tar.gz`, Markdown).
 -   **🔍 Automated Compliance Checks**: Group assertions into logical sections (e.g., OS Integrity, IAM, Data Protection).
+-   **🔒 Privilege Elevation**: Seamlessly run checks requiring root or administrator privileges via secure IPC workers with single-prompt GUI/terminal fallbacks (`sudo`/`pkexec` on Linux, `osascript`/`sudo` on macOS, UAC on Windows).
 -   **🚀 Multi-Platform support**: Native binaries for Linux, Windows, and macOS (Intel & ARM).
 -   **📊 Comprehensive Reporting**: Generates reports in:
     -   **Markdown**: Human-readable summary for documentation.
@@ -26,6 +30,7 @@ Whether you are auditing a desktop for security standards or monitoring server h
 -   **🌍 Adaptive Fleet Audits**: Run compliance checks across Linux, Windows, and macOS using a single **"Universal Playbook"** that adapts logic at runtime via JavaScript.
 -   **🛡️ Dynamic Security Chaining**: Extract data (like current user or PID) in one step and use it to drive subsequent commands within the same assertion.
 -   **🔐 Privacy-Aware Secret Validation**: Audit sensitive configurations for keys or PII without leaking them. Extract values for internal logic while explicitly excluding them from reports.
+-   **⚡ Elevated System Auditing**: Safely audit firewall rules, disk encryption, or protected logs requiring administrator/root rights without running the entire agent as root.
 -   **📈 Weighted Compliance Scoring**: Assign scores to assertions to generate a numerical "Security Health" grade.
 -   **🛠️ Pre-Flight Environment Checks**: Verify system integrity before deploying applications or onboarding new developer machines.
 
@@ -38,15 +43,37 @@ Download the binary for your platform from the [releases](https://github.com/ben
 -   `crobe-mac-arm`
 -   `crobe-mac-intel`
 
-## 🚀 Quick Start: Run a local playbook
+## 🚀 Quick Start
 
-1.  **Run with a playbook:**
-    ```bash
-    ./crobe my-security-audit.yaml
-    ```
+### 🖥️ Interactive Web UI (Desktop)
 
-2.  **View results:**
-    Reports are saved to the directory specified by the `reportDestinationFolder` in the playbook, or the `--folder` CLI flag (which takes precedence). Defaults to `reports/`. Filenames are timestamped (e.g., `260206-033831.report.md`).
+Double-click the binary or run without arguments in any desktop terminal:
+
+```bash
+./crobe
+```
+
+> **Tip:** You can also preload a playbook directly into the UI:
+> ```bash
+> ./crobe --ui my-security-audit.yaml
+> ```
+
+1. **Load**: Drag & drop a `.yaml`/`.json` playbook or fetch directly from an HTTPS URL.
+2. **Inspect**: Review assertions, elevation requirements, and destination settings.
+3. **Execute**: Live progress, real-time streaming logs, and single-prompt OS elevation handling.
+4. **Export**: View compliance scorecard, instant Markdown preview, raw logs, or download full archive bundles (`.zip`, `.tar.gz`, `.tar.zst`).
+
+---
+
+### 💻 Headless & CI/CD Execution (Terminal & Servers)
+
+For servers, automated scripts, or CI/CD pipelines, execute headlessly by supplying the playbook path:
+
+```bash
+./crobe my-security-audit.yaml
+```
+
+Reports are saved to the directory specified by `reportDestinationFolder` in the playbook, or overridden via the `--folder` flag (defaults to `reports/` with timestamped filenames like `260206-033831.report.md`).
 
 ## 🛠️ Configuration (playbook.yaml)
 
@@ -81,11 +108,12 @@ The project is split into two packages under `cmd/` to separate the runtime agen
 
 ### Prerequisites
 
-- [Go](https://go.dev/dl/) 1.24+
+- [Go](https://go.dev/dl/) 1.25+
+- [Node.js](https://nodejs.org/) 24+ / [Bun](https://bun.sh/) (for building embedded frontend assets)
 
 ### Build Agent Binaries
 
-The agent is located in `cmd/probe`. To build optimized binaries for all platforms:
+The agent is located in `cmd/probe`. To build the embedded web assets and compile optimized binaries:
 
 ```bash
 make build
@@ -93,6 +121,10 @@ make build
 
 Or build manually:
 ```bash
+# 1. Build frontend assets
+cd webui && npm install && npm run build && cd ..
+
+# 2. Compile agent with embedded assets
 go build -o crobe ./cmd/probe
 ```
 
@@ -112,7 +144,11 @@ go build -o crobe-builder ./cmd/builder
 ### Running Tests
 
 ```bash
+# Unit & integration tests
 make test
+
+# Embedded Web UI end-to-end Playwright tests
+make test-e2e-gui
 ```
 
 ## ⚖️ License

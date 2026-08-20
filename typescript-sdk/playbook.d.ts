@@ -12,7 +12,7 @@ import { AssertionContext } from './func';
 export interface Assertion {
   /**
    * Unique code for the assertion (e.g., 'AUTH-001').
-   * Minimum 3 characters.
+   * Minimum 3 characters. Must be unique across the entire playbook.
    */
   code: string;
 
@@ -167,6 +167,14 @@ export interface Exec {
    * If true, hides stdout/stderr results from logs and markdown reports.
    */
   excludeFromReport?: boolean;
+
+  /**
+   * If true, requires elevated permissions.
+   * 
+   * When required, crobe coordinates an elevated worker process over IPC 
+   * (sudo/pkexec on Linux, osascript/sudo on macOS, or UAC on Windows).
+   */
+  requireElevation?: boolean;
 }
 
 /**
@@ -300,7 +308,7 @@ export type ReportFormat = 'multipart' | 'json';
  */
 export interface ReportDestinationConfig {
   /**
-   * URL to post the report content to.
+   * URL to post the report content to. Must start with 'https://'.
    */
   url: string;
 

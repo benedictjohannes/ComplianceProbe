@@ -14,6 +14,14 @@ reportFrontmatter:
 #    - SCOPE: Strictly per-assertion. Data is NOT shared between different assertions.
 #    - LIFECYCLE: Persists across preCmds, cmds, and postCmds within the same assertion.
 #    - USAGE: Can be used to drive dynamic logic in subsequent commands via JavaScript.
+#
+# Validation Rules:
+# - title: Minimum 3 characters.
+# - sections: At least one section is required per playbook.
+# - section.title: Minimum 3 characters.
+# - section.assertions: At least one assertion is required per section.
+# - assertion.code: Minimum 3 characters, must be unique across the entire playbook.
+# - assertion.cmds: At least one command is required per assertion.
 sections:
   - title: "1. System Foundation"
     description: 
@@ -36,6 +44,24 @@ sections:
         minPassingScore: 1
         passDescription: "System is running a modern, supported kernel."
         failDescription: "Kernel version is outdated; potential security risk."
+
+      - code: FIREWALL_STATUS
+        title: "Firewall Configuration"
+        description: "Audits packet filtering rules requiring elevated (root/admin) permissions."
+        cmds:
+          - exec:
+              script: "iptables -L -n"
+              # requireElevation (Optional, Default: false): When true, crobe coordinates an elevated worker
+              # process over IPC (via sudo/pkexec on Linux, osascript/sudo on macOS, or UAC on Windows)
+              # to execute the command with elevated root/administrator privileges.
+              requireElevation: true
+            exitCodeRules:
+              - min: 0
+                max: 0
+                result: 1 # Pass if firewall rules can be inspected cleanly
+              - result: -1
+        passDescription: "Firewall rules inspected successfully with elevated privileges."
+        failDescription: "Failed to inspect firewall rules or insufficient permissions."
 
   - title: "2. Identity Tracking"
     description:

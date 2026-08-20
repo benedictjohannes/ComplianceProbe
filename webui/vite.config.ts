@@ -3,7 +3,12 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
+import packageJson from './package.json' with { type: 'json' };
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [svelte(), tailwindcss()],
   resolve: {
     alias: {
